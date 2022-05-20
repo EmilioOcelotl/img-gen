@@ -1,3 +1,4 @@
+import * as Tone from 'tone';
 import * as THREE from 'three';
 import { OrbitControls } from './jsm/controls/OrbitControls.js';
 import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
@@ -41,52 +42,44 @@ let pX = [], pY = [], pZ = [];
 
 let total = 256;
 
-    var hydra = new Hydra({
-	canvas: document.getElementById("myCanvas"),
-	detectAudio: false
-    })
+var hydra = new Hydra({
+    canvas: document.getElementById("myCanvas"),
+    detectAudio: false
+})
     
-    // shape(4,0.7).mult(osc(5,-0.001,9).modulate(noise(3,1)).rotate(10), 1).modulateScale(osc(4,-0.03,0).kaleid(50).scale(0.6),15,0.1).out()
+// shape(4,0.7).mult(osc(5,-0.001,9).modulate(noise(3,1)).rotate(10), 1).modulateScale(osc(4,-0.03,0).kaleid(50).scale(0.6),15,0.1).out()
     
-    osc(20, 0.01, 0.5)
-	.kaleid(7)
-	.rotate(0, 0.1)
-	.modulate(o0, () => mouse.x * 0.0003)
-	.scale(1.01)
-  	.out(o0)
+osc(20, 0.01, 0.5)
+    // .color(0.85, 0.85, 0.85)
+    .kaleid(7)
+    .rotate(1, 0.1)
+    .modulate(o0, () => (mouse.x * 0.0003))
+    .scale(1.01)
+    .out(o0)
     
     const elCanvas = document.getElementById( 'myCanvas');
     elCanvas.style.display = 'none'; 
     
     let vit = new THREE.CanvasTexture(elCanvas);
 
-
-init();
+Tone.start().then(init()); 
 
 function init(){
 
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-    
+
+    // scene.fog = new THREE.Fog(0x000000, 10, 960);
+
     retro();
 
     // scene.background = new THREE.Color( 0x000000 ); 
     
-    light1 = new THREE.PointLight( 0xffffff, 1 );
-    //light1.position.set( 0, 0, 5 );
-    scene.add( light1 );
-    
-    light2 = new THREE.PointLight( 0xffffff, 1 );
-    // light2.position.set( 0, 0, 5 );
-    scene.add( light2 );
-
-    
     //const geometry = new THREE.BoxGeometry(3, 3, 3);
-    const geometry = new THREE.SphereGeometry(15, 3, 4 );
+    const geometry = new THREE.SphereGeometry(15, 2, 3 );
     // Buffergeometry 
     // console.log(geometry.attributes.position); 
     const material = new THREE.MeshBasicMaterial( { color: 0xffffff, map:texture } );
-
 
     for(let i = 0; i < total; i++){
   
@@ -170,7 +163,7 @@ function init(){
 	// refractionRatio: 0.75,
 	// roughness: 0.4,
 	// metalness: 0.8,
-	// map: texture
+	//map: texture
     } );
     
     const pilargeom = new THREE.BoxGeometry(0.5, 1000, 0.5 );
@@ -196,7 +189,7 @@ function init(){
     camera.position.z = 10;
 
 
-    renderer2 = new THREE.WebGLRenderer();
+    renderer2 = new THREE.WebGLRenderer({ antialias: true });
     renderer2.setSize( window.innerWidth, window.innerHeight );
     document.body.appendChild( renderer2.domElement ); 
 
@@ -205,9 +198,9 @@ function init(){
     const renderScene = new RenderPass( scene, camera );
     
     const bloomPass = new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
-    bloomPass.threshold = 0.9;
-    bloomPass.strength = 0.3; // parametrizable 
-    bloomPass.radius = 0.4;
+    bloomPass.threshold = 0.3;
+    bloomPass.strength = 0.1; // parametrizable 
+    bloomPass.radius = 0.8;
     
     composer = new EffectComposer( renderer2 );
     composer.addPass( renderScene );
@@ -231,9 +224,9 @@ function animate() {
  
     for( var i = 0; i < total; i++){
 	
-	    let d = perlin.noise(pX[i]*1+time,
-				 pY[i]*1+time,
-				 pZ[i]*1+time ) * 1
+	let d = perlin.noise(pX[i]*2+time,
+			     pY[i]*2+time,
+			     pZ[i]*2+time ) * 1
 
 	cubos[i].position.x = (pX[i]*200)* (1+d);
 	cubos[i].position.y = (pY[i] *200)* (1+d);
@@ -243,18 +236,40 @@ function animate() {
 	cubos[i].scale.y = 1* (d)*4;
 	cubos[i].scale.z = 1* (d)*4;
 
-	cubos[i].rotation.x = 1* (d)*2;
-	cubos[i].rotation.y = 1* (d)*2;
-	cubos[i].rotation.z = 1* (d)*2;
+	cubos[i].rotation.x = 1* (d)*4;
+	cubos[i].rotation.y = 1* (d)*4;
+	cubos[i].rotation.z = 1* (d)*4;
 	
 	
     }
 
+    for ( var i = 0; i < cuboGrande.geometry.attributes.position.count; i++){
+
+	let d = perlin.noise( cuboGrande.geometry.attributes.position.getX(i)*0.001+time,
+			      cuboGrande.geometry.attributes.position.getY(i)*0.001+time,
+			      cuboGrande.geometry.attributes.position.getZ(i)*0.001+time ) * 0.5
+
+	cuboGrande.geometry.attributes.position.setX(
+	    i, (cuboGrandeCopy.geometry.attributes.position.getX(i)) * (1+d)
+	);
+
+	cuboGrande.geometry.attributes.position.setY(
+	    i, cuboGrandeCopy.geometry.attributes.position.getY(i) * (1+d)
+	);
+
+	cuboGrande.geometry.attributes.position.setZ(
+	    i, cuboGrandeCopy.geometry.attributes.position.getZ(i) * (1+d)
+	);
+	
+	
+    }
+
+    cuboGrande.geometry.attributes.position.needsUpdate = true; 
     
-    //camera.position.x = Math.sin( time2 * 0.125/4 ) * ( 75 + Math.sin( time2 * 0.125 )* 4) * 1; 
-    //camera.position.y = Math.cos( time2 * 0.125/4 ) * 200; 
-    //camera.position.z = Math.cos( time2 * 0.125/4 ) * - 200;
-    // camera.lookAt(0, 0, 0);
+    camera.position.x = Math.sin( time2 * 0.125/4 ) * ( 75 + Math.sin( time2 * 0.125 )* 4) * 1; 
+    camera.position.y = Math.cos( time2 * 0.125/4 ) * 200; 
+    camera.position.z = Math.cos( time2 * 0.125/4 ) * - 200;
+    camera.lookAt(0, 0, 0);
    
     /*
     light1.position.x = Math.sin( time2 * 0.3/2 ) * 14;
