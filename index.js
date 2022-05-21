@@ -9,8 +9,8 @@ import { RenderPass } from './jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from './jsm/postprocessing/UnrealBloomPass.js';
 import { OBJLoader } from './jsm/loaders/OBJLoader.js';
 
-const osc = new OSC();
-osc.open();
+const osc2 = new OSC();
+osc2.open();
 
 document.body.style.cursor = 'none'; 
 
@@ -37,6 +37,7 @@ const vector = new THREE.Vector2();
 let materialC2;
 let audioSphere; 
 let cuboGrande, cuboGrandeCopy; 
+let sph; 
 
 let retroBool = true;
 let gamepads; 
@@ -48,6 +49,7 @@ let bamboo = [];
 let cubos = [];
 
 let pX = [], pY = [], pZ = []; 
+let mX = 1000, mY = 10; 
 
 let total = 256;
 
@@ -56,16 +58,10 @@ var hydra = new Hydra({
     detectAudio: false
 })
     
-// shape(4,0.7).mult(osc(5,-0.001,9).modulate(noise(3,1)).rotate(10), 1).modulateScale(osc(4,-0.03,0).kaleid(50).scale(0.6),15,0.1).out()
-    
-osc(20, 0.01, 0.5)
-    // .color(0.85, 0.85, 0.85)
-    .kaleid(7)
-    .rotate(1, 0.1)
-    .modulate(o0, () => (mouse.x * 0.0003))
-    .scale(1.01)
-    .out(o0)
-    
+//shape(4,0.7).mult(osc(5,-0.001,9).modulate(noise(3,1)).rotate(10), 1).modulateScale(osc(4,-0.03,0).kaleid(50).scale(0.6),15,0.1).out()
+
+osc(10).out();
+
 const elCanvas = document.getElementById( 'myCanvas');
 elCanvas.style.display = 'none'; 
     
@@ -116,20 +112,12 @@ function init(){
 	cubos[i].position.z = pZ[i] * 200;
 
 	cubos[i].rotation.x = Math.random() * 360; 
-
 	cubos[i].rotation.y = Math.random() * 360; 
-
 	cubos[i].rotation.z = Math.random() * 360; 
-	
-	scene.add( cubos[i] );
+	// scene.add( cubos[i] );
 	
     }
 
-    const loader = new OBJLoader( );
-    loader.load( '3d/3d.obj', function ( obj ) {	
-	object = obj;
-	
-    });
 
     oscFuncs; 
     
@@ -164,8 +152,11 @@ function init(){
 	// envMap: alpha < 0.5 ? reflectionCube : null
     } );
 
+	
+    const sphGeom = new THREE.SphereGeometry( 10, 64, 64 );
+    sph = new THREE.Mesh(sphGeom, material); 
     
-    audioSphere = new THREE.SphereGeometry( 500, 32, 32 );
+    audioSphere = new THREE.SphereGeometry( 500, 64, 64 );
     // audioSphere = new THREE.CylinderGeometry( 500, 500, 500, 6 );
     // audioSphere = new THREE.BoxGeometry( 1000, 500, 1000, 16, 16, 16 )
     audioSphere.usage = THREE.DynamicDrawUsage;
@@ -230,6 +221,162 @@ function init(){
 
     controls = new OrbitControls( camera, renderer2.domElement );
     controls.maxDistance = 300;
+
+    
+    osc2.on('/switchHydra', message => {
+
+	hush();
+	
+	switch(  message.args[0] ) {
+	case 0:
+	   
+	    osc(20, 0.01, 0)
+	    // .color(0.85, 0.85, 0.85)
+		.kaleid(7)
+		.rotate(1, 0.1)
+		.modulate(o0, () => (mX * 0.0003))
+		.scale(1.01)
+		.out(o0)
+	    break;
+	case 1:
+	    voronoi(8,1)
+		.mult(osc(10,0.1,0))
+		.modulate(o0,0.5)
+		.add(o0,0.8)
+		.scrollY(-0.01)
+		.scale(0.99)
+		.modulate(voronoi(8,1),0.008)
+		.luma(()=>mX*0.0009) 
+		.out()
+	    break;
+	case 2:
+	    osc(5, 0.9, 0.00)
+		.kaleid([3,4,5,7,8,9,10].fast(0.1))
+		.rotate(0.009,()=>Math.sin(time)* -0.0001 )
+		.modulateRotate(o0,()=>Math.sin(time) * 0.0003)
+		.modulate(o0, ()=>mX*0.0009)
+	    //  .scale(()=>mouse.y*0.0009) //cambiar X
+		.scale(.99) //scala estática
+		.out(o0)
+	    break;
+	case 3:
+	    osc(5)
+		.modulate(noise(6),.22).diff(o0)
+		.modulateScrollY(osc(0.8).modulate(osc(10).modulate(osc(2,0.1),()=>mX*0.01).rotate(),.91))
+		.scale(.79)
+		.out()
+	    break;
+	case 4:
+	    osc(105).rotate(0.11, 0.1).modulate(osc(10).rotate(0.3).add(o0, 0.1)).add(osc(20,0.01,0)).out(o0)
+	    osc(50,0.005).diff(o0).modulate(o1,()=>mX*0.00009).out(o1)
+	    render(o1)
+	    break;
+	case 5:
+	    voronoi(350,0.15)
+		.modulateScale(osc(8).rotate(Math.sin(time)),.5)
+		.thresh(.8)
+		.modulateRotate(osc(7),.4)
+		.thresh(.7)
+		.diff(src(o0).scale(1.8))
+		.modulateScale(osc(2).modulateRotate(o0,.74))
+		.diff(src(o0).rotate([-.012,.01,-.002,0]).scrollY(0,[-1/199800,0].fast(0.7)))
+		.brightness([-.02,-.17].smooth().fast(.5))
+		.out()
+	    break;
+	case 6:
+	    shape(20,0.11,0.3)
+		.scale(.9)
+		.repeat(() => Math.sin(time)*100)
+		.modulateRotate(o0)
+		.scale(()=>mX*0.01)
+		.modulate(noise(10,2))
+		.rotate(1, .2)
+		.layer(o0,0.1)
+		.modulateScrollY(noise(3),-0.1)
+		.scale(0.999)
+		.modulate(voronoi(1,1),0.08)
+		.out(o0)
+	    break;
+	case 7:
+	    shape(8,0.5)
+  .scale(0.3,3)
+  .rotate(-1.3)
+  .scrollY(0,-0.3)
+  .repeat(2,2, ()=>Math.sin(time)*4,()=>Math.sin(time)*4)
+  .add(src(o0)
+   	.scrollY(0.001),0.99)
+  .scale(1.01)
+  .layer(src(o0)
+     	.mask(shape(3,() => Math.sin(time)*0.5+0.8,-0.001)
+           	.rotate(0,2).scale(0.5,0.5))
+     	.shift([0,-0.001].fast(0.1),0,[-0.001,0.001])
+  .colorama([0.001,0.002,0.008,-0.009].fast(0.5))
+     	.scrollY(-0.005))
+  .blend(o0,0.4)
+  .saturate([1,0.8])
+  .out()
+	    break;
+	case 8:
+	    solid().out();
+	    break; 
+	    
+	}
+	
+	console.log(message.args[0]); 
+    })
+
+    osc2.on('/cubos', message => {
+	if(message.args[0]){
+	    for( var i = 0; i < total; i++){
+		scene.add(cubos[i]);
+	    }
+	} else {
+	    for( var i = 0; i < total; i++){
+		scene.remove(cubos[i]);
+	    }
+	}  
+    });
+
+    osc2.on('/bloom', message => {
+	bloomPass.strength = message.args[0];
+    });
+
+    
+    osc2.on('/sph', message => {
+	if(message.args[0]){
+	    scene.add(sph); 
+	} else {
+	    scene.remove(sph); 
+	}
+    });
+
+
+    osc2.on('/retroB', message => {
+	retroBool = message.args[0];
+	// console.log( retroBool );
+	if(retroBool){
+	    retroadd();
+	} else {
+	    retrorm(); 
+	}
+    });
+
+    
+    osc2.on('/camX', message => {
+	camera.position.x = message.args[0];
+    })
+
+    osc2.on('/camY', message => {
+	camera.position.y = message.args[0];
+    })
+
+    osc2.on('/camZ', message => {
+	camera.position.z = message.args[0];
+    })
+
+    osc2.on('/mX', message => {
+	mX = message.args[0];
+    })
     
     animate();
 
@@ -240,43 +387,44 @@ function animate() {
     requestAnimationFrame( animate );
 
     var time2 = Date.now() * 0.005;
-    var time = Date.now() * 0.00001;
-
+    var time = Date.now() * 0.0001;
     let perlin = new ImprovedNoise();
- 
+
     for( var i = 0; i < total; i++){
 	
-	let d = perlin.noise(pX[i]*(Tone.dbToGain(an.getValue()[i%16] )*100)+time,
-			     pY[i]*(Tone.dbToGain(an.getValue()[i%16] )*100)+time,
-			     pZ[i]*(Tone.dbToGain(an.getValue()[i%16] )*100)+time ) * 0.5
+	let d = perlin.noise(pX[i]*2+time,
+			     pY[i]*2+time,
+			     pZ[i]*2+time ) * 1
 
 	cubos[i].position.x = (pX[i]*200)* (1+d);
 	cubos[i].position.y = (pY[i] *200)* (1+d);
 	cubos[i].position.z = (pZ[i]* 200)* (1+d);
 
-	cubos[i].scale.x = 1* (d)*16;
-	cubos[i].scale.y = 1* (d)*16;
-	cubos[i].scale.z = 1* (d)*16;
+	cubos[i].scale.x = 1* (d)*4;
+	cubos[i].scale.y = 1* (d)*4;
+	cubos[i].scale.z = 1* (d)*4;
 
-	cubos[i].rotation.x = 1* (d)*16;
-	cubos[i].rotation.y = 1* (d)*16;
-	cubos[i].rotation.z = 1* (d)*16;
+	cubos[i].rotation.x = 1* (d)*4;
+	cubos[i].rotation.y = 1* (d)*4;
+	cubos[i].rotation.z = 1* (d)*4;
 	
 	
     }
 
     for ( var i = 0; i < cuboGrande.geometry.attributes.position.count; i++){
 
-	let d = perlin.noise( cuboGrande.geometry.attributes.position.getX(i)*(Tone.dbToGain(an.getValue()[i%16] )*0.1)+time,
-			      cuboGrande.geometry.attributes.position.getY(i)*(Tone.dbToGain(an.getValue()[i%16] )*0.1)+time,
-			      cuboGrande.geometry.attributes.position.getZ(i)*(Tone.dbToGain(an.getValue()[i%16] )*0.1)+time ) * 0.5
+	let d = perlin.noise( cuboGrande.geometry.attributes.position.getX(i)*0.001+time,
+			      cuboGrande.geometry.attributes.position.getY(i)*0.001+time,
+			      cuboGrande.geometry.attributes.position.getZ(i)*0.001+time ) * 0.5
 
 	cuboGrande.geometry.attributes.position.setX(
 	    i, (cuboGrandeCopy.geometry.attributes.position.getX(i)) * (1+d)
 	);
+
 	cuboGrande.geometry.attributes.position.setY(
 	    i, cuboGrandeCopy.geometry.attributes.position.getY(i) * (1+d)
 	);
+
 	cuboGrande.geometry.attributes.position.setZ(
 	    i, cuboGrandeCopy.geometry.attributes.position.getZ(i) * (1+d)
 	);
@@ -284,11 +432,12 @@ function animate() {
 	
     }
 
-    cuboGrande.geometry.attributes.position.needsUpdate = true; 
-    
+    cuboGrande.geometry.attributes.position.needsUpdate = true;
+    /*
     camera.position.x = Math.sin( time2 * 0.125/4 ) * ( 75 + Math.sin( time2 * 0.125 )* 4) * 1; 
     camera.position.y = Math.cos( time2 * 0.125/4 ) * 200; 
     camera.position.z = Math.cos( time2 * 0.125/4 ) * - 200;
+    */
     camera.lookAt(0, 0, 0);
    
     /*
@@ -356,76 +505,14 @@ function retroadd(){
 }
 
 function oscFuncs(){
-    
-    osc.on('/switchHydra', message => {
-	
-	swtichHydra = message.args[0];
-	hush();
-
-	switch( switchHydra ) {
-	case 0:
-	    // algo 
-	    break;
-	case 1:
-	    // otro algo
-	    break; 
-	    
-	}
-	
-	console.log(switchHydra); 
-    })
-
-     osc.on('/switchModel', message => {
-
-	 swtichModel = message.args[0];
-
-	 // disposear las cosas 
-	 
-	switch( model ) {
-	case 0:
-	    // algo 
-	    break;
-	case 1:
-	    // otro algo
-	    break; 
-	    
-	}
-
-	 console.log(switchModel); 
-    })
-
-    osc.on('/cubos', message => {
-	if(cubos){
-	    for( var i = 0; i < total; i++){
-		scene.add(cubos[i]);
-	    }
-	} else {
-	    for( var i = 0; i < total; i++){
-		scene.remove(cubos[i]);
-	    }
-	}  
-    });
-
-    osc.on('/bloom', message => {
-	bloomPass.strength = message.args[0];
-    });
-
-    osc.on('/retroB', message => {
-	retroBool = message.args[0];
-	// console.log( retroBool );
-	if(retroBool){
-	    retroadd();
-	} else {
-	    retrorm(); 
-	}
-    });
+   
     
 }
 
 function audio(){
     
     an = new Tone.Analyser('fft', 32 );
-    an.smoothing = 0.8
+    an.smoothing = 0.99
     const mic = new Tone.UserMedia().connect( an );
     mic.open();
     
