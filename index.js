@@ -7,9 +7,8 @@ import { ImprovedNoise } from './jsm/math/ImprovedNoise.js';
 import { EffectComposer } from './jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from './jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from './jsm/postprocessing/UnrealBloomPass.js';
+import { OBJLoader } from './jsm/loaders/OBJLoader.js';
 
-// import * as OSC from 'osc-js'; 
-// const OSC = require('osc-js'); // pal osc 
 const osc = new OSC();
 osc.open();
 
@@ -19,6 +18,16 @@ let renderer2, scene, camera, composer, controls;
 
 let cube, ring, ring2, ring3;
 
+let switchHydra = 0, switchModel = 0; 
+
+/*
+let loader = new GLTFLoader();
+var dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath( '/js/draco/' );
+loader.setDRACOLoader( dracoLoader );
+*/
+
+let object; 
 
 let texture;
 let dpr = window.devicePixelRatio; 
@@ -57,12 +66,15 @@ osc(20, 0.01, 0.5)
     .scale(1.01)
     .out(o0)
     
-    const elCanvas = document.getElementById( 'myCanvas');
-    elCanvas.style.display = 'none'; 
+const elCanvas = document.getElementById( 'myCanvas');
+elCanvas.style.display = 'none'; 
     
-    let vit = new THREE.CanvasTexture(elCanvas);
+let vit = new THREE.CanvasTexture(elCanvas);
 
 Tone.start().then(init()); 
+
+let an, mic; 
+let anSphere = false, anObject = false; 
 
 function init(){
 
@@ -73,6 +85,7 @@ function init(){
 
     retro();
 
+    audio(); 
     // scene.background = new THREE.Color( 0x000000 ); 
     
     //const geometry = new THREE.BoxGeometry(3, 3, 3);
@@ -108,8 +121,17 @@ function init(){
 
 	cubos[i].rotation.z = Math.random() * 360; 
 	
-    scene.add( cubos[i] );
+	scene.add( cubos[i] );
+	
     }
+
+    const loader = new OBJLoader( );
+    loader.load( '3d/3d.obj', function ( obj ) {	
+	object = obj;
+	
+    });
+
+    oscFuncs; 
     
     const geometryP = new THREE.PlaneGeometry( 16*2, 9*2 );
     const materialP = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide, map: vit} );
@@ -143,7 +165,7 @@ function init(){
     } );
 
     
-    audioSphere = new THREE.SphereGeometry( 500, 16, 16 );
+    audioSphere = new THREE.SphereGeometry( 500, 32, 32 );
     // audioSphere = new THREE.CylinderGeometry( 500, 500, 500, 6 );
     // audioSphere = new THREE.BoxGeometry( 1000, 500, 1000, 16, 16, 16 )
     audioSphere.usage = THREE.DynamicDrawUsage;
@@ -218,45 +240,43 @@ function animate() {
     requestAnimationFrame( animate );
 
     var time2 = Date.now() * 0.005;
-    var time = Date.now() * 0.0001;
+    var time = Date.now() * 0.00001;
 
     let perlin = new ImprovedNoise();
  
     for( var i = 0; i < total; i++){
 	
-	let d = perlin.noise(pX[i]*2+time,
-			     pY[i]*2+time,
-			     pZ[i]*2+time ) * 1
+	let d = perlin.noise(pX[i]*(Tone.dbToGain(an.getValue()[i%16] )*100)+time,
+			     pY[i]*(Tone.dbToGain(an.getValue()[i%16] )*100)+time,
+			     pZ[i]*(Tone.dbToGain(an.getValue()[i%16] )*100)+time ) * 0.5
 
 	cubos[i].position.x = (pX[i]*200)* (1+d);
 	cubos[i].position.y = (pY[i] *200)* (1+d);
 	cubos[i].position.z = (pZ[i]* 200)* (1+d);
 
-	cubos[i].scale.x = 1* (d)*4;
-	cubos[i].scale.y = 1* (d)*4;
-	cubos[i].scale.z = 1* (d)*4;
+	cubos[i].scale.x = 1* (d)*16;
+	cubos[i].scale.y = 1* (d)*16;
+	cubos[i].scale.z = 1* (d)*16;
 
-	cubos[i].rotation.x = 1* (d)*4;
-	cubos[i].rotation.y = 1* (d)*4;
-	cubos[i].rotation.z = 1* (d)*4;
+	cubos[i].rotation.x = 1* (d)*16;
+	cubos[i].rotation.y = 1* (d)*16;
+	cubos[i].rotation.z = 1* (d)*16;
 	
 	
     }
 
     for ( var i = 0; i < cuboGrande.geometry.attributes.position.count; i++){
 
-	let d = perlin.noise( cuboGrande.geometry.attributes.position.getX(i)*0.001+time,
-			      cuboGrande.geometry.attributes.position.getY(i)*0.001+time,
-			      cuboGrande.geometry.attributes.position.getZ(i)*0.001+time ) * 0.5
+	let d = perlin.noise( cuboGrande.geometry.attributes.position.getX(i)*(Tone.dbToGain(an.getValue()[i%16] )*0.1)+time,
+			      cuboGrande.geometry.attributes.position.getY(i)*(Tone.dbToGain(an.getValue()[i%16] )*0.1)+time,
+			      cuboGrande.geometry.attributes.position.getZ(i)*(Tone.dbToGain(an.getValue()[i%16] )*0.1)+time ) * 0.5
 
 	cuboGrande.geometry.attributes.position.setX(
 	    i, (cuboGrandeCopy.geometry.attributes.position.getX(i)) * (1+d)
 	);
-
 	cuboGrande.geometry.attributes.position.setY(
 	    i, cuboGrandeCopy.geometry.attributes.position.getY(i) * (1+d)
 	);
-
 	cuboGrande.geometry.attributes.position.setZ(
 	    i, cuboGrandeCopy.geometry.attributes.position.getZ(i) * (1+d)
 	);
@@ -284,7 +304,7 @@ function animate() {
     
     vit.needsUpdate = true; 
 
-    for(let i = 0; i < 256; i++){
+    for(let i = 0; i < total; i++){
 	cubos[i].rotation.y += 0.005; 
     }
     
@@ -333,4 +353,80 @@ function retrorm(){
 
 function retroadd(){
     scene.add( cuboGrande ); 
+}
+
+function oscFuncs(){
+    
+    osc.on('/switchHydra', message => {
+	
+	swtichHydra = message.args[0];
+	hush();
+
+	switch( switchHydra ) {
+	case 0:
+	    // algo 
+	    break;
+	case 1:
+	    // otro algo
+	    break; 
+	    
+	}
+	
+	console.log(switchHydra); 
+    })
+
+     osc.on('/switchModel', message => {
+
+	 swtichModel = message.args[0];
+
+	 // disposear las cosas 
+	 
+	switch( model ) {
+	case 0:
+	    // algo 
+	    break;
+	case 1:
+	    // otro algo
+	    break; 
+	    
+	}
+
+	 console.log(switchModel); 
+    })
+
+    osc.on('/cubos', message => {
+	if(cubos){
+	    for( var i = 0; i < total; i++){
+		scene.add(cubos[i]);
+	    }
+	} else {
+	    for( var i = 0; i < total; i++){
+		scene.remove(cubos[i]);
+	    }
+	}  
+    });
+
+    osc.on('/bloom', message => {
+	bloomPass.strength = message.args[0];
+    });
+
+    osc.on('/retroB', message => {
+	retroBool = message.args[0];
+	// console.log( retroBool );
+	if(retroBool){
+	    retroadd();
+	} else {
+	    retrorm(); 
+	}
+    });
+    
+}
+
+function audio(){
+    
+    an = new Tone.Analyser('fft', 32 );
+    an.smoothing = 0.8
+    const mic = new Tone.UserMedia().connect( an );
+    mic.open();
+    
 }
