@@ -55,22 +55,37 @@ let total = 256;
 
 var hydra = new Hydra({
     canvas: document.getElementById("myCanvas"),
-    detectAudio: false
-})
-    
+    detectAudio: false,
+    makeGlobal: false
+}).synth
+
+var hydra2 = new Hydra({
+    canvas: document.getElementById("myCanvas2"),
+    detectAudio: false,
+    makeGlobal: false
+}).synth
+
 //shape(4,0.7).mult(osc(5,-0.001,9).modulate(noise(3,1)).rotate(10), 1).modulateScale(osc(4,-0.03,0).kaleid(50).scale(0.6),15,0.1).out()
 
-osc(10).out();
+hydra2.noise().out(hydra2.o0); 
+hydra.osc(10).out(hydra.o0);
 
 const elCanvas = document.getElementById( 'myCanvas');
-elCanvas.style.display = 'none'; 
-    
+elCanvas.style.display = 'none';     
 let vit = new THREE.CanvasTexture(elCanvas);
+
+const elCanvas2 = document.getElementById( 'myCanvas2');
+elCanvas2.style.display = 'none';     
+let vit2 = new THREE.CanvasTexture(elCanvas2);
+
 
 Tone.start().then(init()); 
 
 let an, mic; 
 let anSphere = false, anObject = false; 
+let vertices = []; 
+let boolMesh = true; 
+let meshFinal; 
 
 function init(){
 
@@ -82,13 +97,13 @@ function init(){
     retro();
 
     audio(); 
-    // scene.background = new THREE.Color( 0x000000 ); 
+    scene.background = new THREE.Color( 0xffffff ); 
     
     //const geometry = new THREE.BoxGeometry(3, 3, 3);
     const geometry = new THREE.SphereGeometry(15, 2, 3 );
     // Buffergeometry 
     // console.log(geometry.attributes.position); 
-    const material = new THREE.MeshBasicMaterial( { color: 0xffffff, map:texture } );
+    const material = new THREE.MeshBasicMaterial( { color: 0xffffff, map:texture,  side: THREE.DoubleSide } );
 
     for(let i = 0; i < total; i++){
   
@@ -119,28 +134,11 @@ function init(){
     }
 
 
-    oscFuncs; 
-    
     const geometryP = new THREE.PlaneGeometry( 16*2, 9*2 );
-    const materialP = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide, map: vit} );
+    const materialP = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide, map: vit2 } );
     const plane = new THREE.Mesh( geometryP, materialP );
     // scene.add( plane );
 
-    const geometryR = new THREE.RingGeometry( 5.8, 6, 64, 8, 0, Math.PI );
-    const materialR = new THREE.MeshStandardMaterial( { color: 0xffffff, side: THREE.DoubleSide, map:vit } );
-    ring = new THREE.Mesh( geometryR, materialR );
-    //scene.add( ring );
-
-    const geometryR2 = new THREE.RingGeometry( 5, 5.2, 64, 8, 0, Math.PI );
-    const materialR2 = new THREE.MeshBasicMaterial( { color: 0xffffff, side: THREE.DoubleSide, map:vit } );
-    ring2 = new THREE.Mesh( geometryR2, materialR2 );
-    //scene.add( ring2 );
-
-    const geometryR3 = new THREE.RingGeometry( 4.2, 4.4, 64, 8, 0, Math.PI );
-    const materialR3 = new THREE.MeshBasicMaterial( { color: 0xffffff, side: THREE.DoubleSide, map:vit } );
-    ring3 = new THREE.Mesh( geometryR3, materialR2 );
-    // scene.add( ring3 );
-   
     materialC2 = new THREE.MeshBasicMaterial( {
 	map: vit,
 	side: THREE.DoubleSide,
@@ -153,19 +151,20 @@ function init(){
     } );
 
 	
-    const sphGeom = new THREE.SphereGeometry( 10, 64, 64 );
-    sph = new THREE.Mesh(sphGeom, material); 
+    const sphGeom = new THREE.SphereGeometry( 20, 64, 64 );
+    sph = new THREE.Mesh(sphGeom, materialC2); 
     
     audioSphere = new THREE.SphereGeometry( 500, 64, 64 );
     // audioSphere = new THREE.CylinderGeometry( 500, 500, 500, 6 );
-    // audioSphere = new THREE.BoxGeometry( 1000, 500, 1000, 16, 16, 16 )
+    //audioSphere = new THREE.BoxGeometry( 500, 500, 500, 32, 32, 32 )
     audioSphere.usage = THREE.DynamicDrawUsage;
 	
     audioSphere.computeBoundingBox();	  
   
     cuboGrande = new THREE.Mesh(audioSphere, materialC2 );
     cuboGrandeCopy = new THREE.Mesh(audioSphere.clone(), materialC2 );
-   
+
+    // materialC2.depthTest = false; 
     cuboGrande.geometry.usage = THREE.DynamicDrawUsage;
 	    
    scene.add(cuboGrande);
@@ -201,8 +200,68 @@ function init(){
     
     camera.position.z = 10;
 
+    /*
+    const loader = new OBJLoader();
 
-    renderer2 = new THREE.WebGLRenderer({ antialias: true });
+    loader.load(
+	'3d/objeto.obj',
+	function ( object ) {
+	    console.log(object.children[0]); 
+	    obj = object.children[0];
+	    obj.material = materialC2;
+	    // obj.geometry = THREE.BufferGeometryUtils.mergeVertices(obj.geometry);
+	    obj.geometry.computeVertexNormals(true); 
+	    scene.add( obj );
+	}
+	);
+    */
+
+    let vertices = [];
+    let normales = []; 
+    const cantidad = 1000;
+    
+    for(let i = 0; i < cantidad; i++){
+	for(let j = 0; j < cantidad; j++){
+
+	    let lat = THREE.MathUtils.mapLinear(i, 0, cantidad,  -Math.PI, Math.PI);
+	    let lon = THREE.MathUtils.mapLinear(j, 0, cantidad, -Math.PI, Math.PI);
+	    /*
+	    let x = 1.5 * Math.cos(lat) * (1.5 + Math.sin(lon) * Math.cos(lat) - Math.sin(2*lon) * Math.sin(lat) / 2);
+            let y = 1.5 * Math.sin(lat) * (1.5 + Math.sin(lon) * Math.cos(lat) - Math.sin(2*lon) * Math.sin(lat) / 2) ;
+            let z = 1.5 * Math.sin(lat) * Math.sin(lon) + Math.cos(lat) * Math.sin(2*lon) / 2 ;
+	    */
+
+	    let x =  2 * Math.cos(lat) * Math.cos(lon);
+	    let y =  2 * Math.sin(lat) * Math.cos(lon);
+	    let z =  2 * Math.sin(lon) + 1*lat;  
+	    
+	    vertices.push(x, y, z);
+	   
+	}
+    }
+
+    const geometry2 = new THREE.PlaneGeometry( 5, 5, cantidad, cantidad);
+
+    meshFinal = new THREE.Mesh(geometry2, material );
+    meshFinal.scale.x = 16; 
+    meshFinal.scale.y = 16; 
+    meshFinal.scale.z = 16; 
+     
+    geometry2.attributes.position.needsUpdate = true;
+    // geometry2.computeVertexNormals(); 
+
+    for(let i = 0; i < geometry2.attributes.position.count; i++){
+	geometry2.attributes.position.setX(i, vertices[i*3]);
+	geometry2.attributes.position.setY(i, vertices[i*3+1]); 
+	geometry2.attributes.position.setZ(i, vertices[i*3+2]); 
+    }
+
+    // console.log(vertices); 
+    // scene.add(meshFinal); 
+    
+    // renderer2 = new THREE.WebGLRenderer({ antialias: true });
+    renderer2 = new THREE.WebGLRenderer();
+
     renderer2.setSize( window.innerWidth, window.innerHeight );
     document.body.appendChild( renderer2.domElement ); 
 
@@ -222,25 +281,24 @@ function init(){
     controls = new OrbitControls( camera, renderer2.domElement );
     controls.maxDistance = 300;
 
-    
     osc2.on('/switchHydra', message => {
 
-	hush();
+	hydra.hush();
 	
 	switch(  message.args[0] ) {
 	case 0:
 	   
-	    osc(20, 0.01, 0)
+	    hydra.osc(mY, 0.1, 0.1)
 	    // .color(0.85, 0.85, 0.85)
-		.kaleid(7)
-		.rotate(1, 0.1)
-		.modulate(o0, () => (mX * 0.0003))
-		.scale(1.01)
-		.out(o0)
+		.kaleid(3)
+		.rotate(10, 0.1)
+		.modulate(hydra.o0, () => (mX * 0.0003))
+		.scale(1.05)
+		.out(hydra.o0)
 	    break;
 	case 1:
 	    voronoi(8,1)
-		.mult(osc(10,0.1,0))
+		.mult(osc(10,0.1,0.2))
 		.modulate(o0,0.5)
 		.add(o0,0.8)
 		.scrollY(-0.01)
@@ -299,22 +357,22 @@ function init(){
 	    break;
 	case 7:
 	    shape(8,0.5)
-  .scale(0.3,3)
-  .rotate(-1.3)
-  .scrollY(0,-0.3)
-  .repeat(2,2, ()=>Math.sin(time)*4,()=>Math.sin(time)*4)
-  .add(src(o0)
-   	.scrollY(0.001),0.99)
-  .scale(1.01)
-  .layer(src(o0)
-     	.mask(shape(3,() => Math.sin(time)*0.5+0.8,-0.001)
-           	.rotate(0,2).scale(0.5,0.5))
-     	.shift([0,-0.001].fast(0.1),0,[-0.001,0.001])
-  .colorama([0.001,0.002,0.008,-0.009].fast(0.5))
-     	.scrollY(-0.005))
-  .blend(o0,0.4)
-  .saturate([1,0.8])
-  .out()
+		.scale(0.3,3)
+		.rotate(-1.3)
+		.scrollY(0,-0.3)
+		.repeat(2,2, ()=>Math.sin(time)*4,()=>Math.sin(time)*4)
+		.add(src(o0)
+   		     .scrollY(0.001),0.99)
+		.scale(1.01)
+		.layer(src(o0)
+     		       .mask(shape(3,() => Math.sin(time)*0.5+0.8,-0.001)
+           		     .rotate(0,2).scale(0.5,0.5))
+     		       .shift([0,-0.001].fast(0.1),0,[-0.001,0.001])
+		       .colorama([0.001,0.002,0.008,-0.009].fast(0.5))
+     		       .scrollY(-0.005))
+		.blend(o0,0.4)
+		.saturate([1,0.8])
+		.out()
 	    break;
 	case 8:
 	    solid().out();
@@ -350,7 +408,6 @@ function init(){
 	}
     });
 
-
     osc2.on('/retroB', message => {
 	retroBool = message.args[0];
 	// console.log( retroBool );
@@ -361,6 +418,15 @@ function init(){
 	}
     });
 
+    osc2.on('/meshFinal', message => {
+	boolMesh = message.args[0];
+	// console.log( retroBool );
+	if(boolMesh){
+	    addMesh();
+	} else {
+	    rmMesh(); 
+	}
+    });
     
     osc2.on('/camX', message => {
 	camera.position.x = message.args[0];
@@ -377,6 +443,10 @@ function init(){
     osc2.on('/mX', message => {
 	mX = message.args[0];
     })
+
+     osc2.on('/mY', message => {
+	mY = message.args[0];
+    })
     
     animate();
 
@@ -392,9 +462,9 @@ function animate() {
 
     for( var i = 0; i < total; i++){
 	
-	let d = perlin.noise(pX[i]*2+time,
-			     pY[i]*2+time,
-			     pZ[i]*2+time ) * 1
+	let d = perlin.noise(pX[i]*4+time,
+			     pY[i]*4+time,
+			     pZ[i]*4+time ) * 1
 
 	cubos[i].position.x = (pX[i]*200)* (1+d);
 	cubos[i].position.y = (pY[i] *200)* (1+d);
@@ -452,6 +522,7 @@ function animate() {
     */
     
     vit.needsUpdate = true; 
+    vit2.needsUpdate = true; 
 
     for(let i = 0; i < total; i++){
 	cubos[i].rotation.y += 0.005; 
@@ -461,9 +532,7 @@ function animate() {
     //cube.rotation.y += 0.002;
 
     // camera.rotation.x +- 0.01; 
-    ring.rotation.z -= 0.01; 
-    ring2.rotation.z += 0.02; 
-    ring3.rotation.z -= 0.03; 
+   
     renderer2.render( scene, camera );
     composer.render();
 
@@ -504,9 +573,12 @@ function retroadd(){
     scene.add( cuboGrande ); 
 }
 
-function oscFuncs(){
-   
-    
+function addMesh(){
+    scene.add(meshFinal); 
+}
+
+function rmMesh(){
+    scene.remove(meshFinal); 
 }
 
 function audio(){

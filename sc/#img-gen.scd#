@@ -3,88 +3,66 @@
 m = NetAddr("localhost", 41234);// local machine
 )
 
-m.sendMsg("/switchHydra",4);
-
-m.sendMsg("/retroB", 1 );
-m.sendMsg("/retroB", 0 );
-
-m.sendMsg("/partB", 1 );
-m.sendMsg("/partB", 0 );
-
-m.sendMsg("/tiempo", 1 );
-m.sendMsg("/tiempo", 0 );
-
-m.sendMsg("/distort", 0.08 );
-m.sendMsg("/velocidad", 0.4 );
-
-m.sendMsg("/cajascale", 1);
-m.sendMsg("/partscale", 0.1 );
-
-m.sendMsg("/cajasBool", 1 );
-m.sendMsg("/cajasBool", 0 );
-
-m.sendMsg("/afterimage", 0 );
-m.sendMsg("/glitchBool", 1 );
-m.sendMsg("/glitchBool", 0 );
-m.sendMsg("/camdist", 50 );
-m.sendMsg("/velrot", 0.3 );
-
+m.sendMsg("/switchHydra",8);
+.m.sendMsg("/cubos", 0);
+m.sendMsg("/bloom", 0.1);
+m.sendMsg("/sph", 1);
+m.sendMsg("/retroB", 1);
+m.sendMsg("/camX", 100);
+m.sendMsg("/camY", 200);
+m.sendMsg("/camZ", 1);
 
 (
-q = ();
-NetAddr.broadcastFlag = true;
-q.addrs = (0..7).collect { |x|
-		NetAddr("255.255.255.255", 57120 + x)
-};
-q.sendAll = { |q ... args|
-		q.addrs.do { |addr|
-				addr.sendMsg(*args)
-		}; ""
-}
-
-
-);
-
-
-// hola
-
-(
-
-//PirS.start;
-m.sendMsg("/textON", 1);
-
-History.start;
-//History.makeWin;
-
-OSCdef(\hist, { |msg|
-	//msg.postln;
-	History.enter(msg[2].asString, msg[1]);
-}, \hist).fix;
-
-OSCdef(\ofx, { |msg|
-	m.sendMsg("/message", msg[2].asString, msg[1].asString);
-z = z.add(msg[2].asString);
-if(z.size == 10,
-	{z.removeAt(0)
-	});
-//z.postln;
-	//PirS.n.sendMsg("/multimsg", 1, (2300).rand2-600, (1000).rand2+500, 10.rand, 360.rand2, 60.rand2, z[6]);
-	//PirS.n.sendMsg("/multimsg", 2, (1300).rand2-600, (1000).rand2+500, 10.rand, 360.rand2, 60.rand2, z[5]);
-	//PirS.n.sendMsg("/multimsg", 3, (600).rand2-300, (1000).rand2+500, 10.rand, 360.rand2, 60.rand2, z[4]);
-	//PirS.n.sendMsg("/multimsg", 4, (600).rand2-300, (1000).rand2+500, 10.rand, 360.rand2, 60.rand2, z[3]);
-	//PirS.n.sendMsg("/multimsg", 5, (600).rand2-300, (1000).rand2+500, 10.rand, 360.rand2, 60.rand2, z[2]);
-	//PirS.n.sendMsg("/multimsg", 6, (600).rand2-300, (1000).rand2+500, 10.rand, 360.rand2, 60.rand2, z[1]);
-
-}, \hist);
-
-
-History.localOff;
-
-History.forwardFunc = { |code|
-	//q.sendAll(\hist, \killall, code);
-	q.sendAll(\hist, \emi, code);
-};
-
+OSCdef( \camX, {|msg|
+	var data = msg[3];
+	m.sendMsg("/camX", data);
+}, '/camXDef');
+~camXSend = {SendReply.kr(Impulse.kr(~tempo*60), '/camXDef', ~camX.kr)};
+~camX = {Lag.kr(Demand.kr(Impulse.kr(~dematempo*~tempo*0.125/4), 0, Drand([0,1, 10, 200, -200, 400, -350, 600, 789]*0.5,inf)), 2)};
 )
 
+OSCdef(\camX).free;
 
+(
+OSCdef( \camY, {|msg|
+	var data = msg[3];
+	m.sendMsg("/camY", data);
+}, '/camYDef');
+~camYSend = {SendReply.kr(Impulse.kr(~tempo*60), '/camYDef', ~camY.kr)};
+~camY = {Lag.kr(Demand.kr(Impulse.kr(~dematempo*~tempo*0.125/4), 0, Drand([0,1, 10, 200, -200, 400, -350]*0.5,inf)), 2)};
+)
+
+OSCdef(\camX).free;
+
+(
+OSCdef( \camZ, {|msg|
+	var data = msg[3];
+	m.sendMsg("/camZ", data);
+}, '/camZDef');
+~camZSend = {SendReply.kr(Impulse.kr(~tempo*60), '/camZDef', ~camZ.kr)};
+~camZ = {Lag.kr(Demand.kr(Impulse.kr(~dematempo*~tempo*0.125), 0, Drand([0,1, 10, 200, -200, 400, -350]*0.5,inf)), 2)};
+)
+
+OSCdef(\camZ).free;
+
+(
+OSCdef( \switchHydra, {|msg|
+	var data = msg[3];
+	m.sendMsg("/switchHydra", data);
+}, '/shDef');
+~shSend = {SendReply.kr(Impulse.kr(~tempo*0.25), '/shDef', ~sh.kr)};
+~sh = {Demand.kr(Impulse.kr(~dematempo*~tempo*0.125/4), 0, Drand([0, 1, 2, 3, 4, 5, 6, 7],inf))};
+)
+
+OSCdef(\switchHydra).free;
+
+(
+OSCdef( \mX, {|msg|
+	var data = msg[3];
+	m.sendMsg("/mX", data);
+}, '/mXDef');
+~mXSend = {SendReply.kr(Impulse.kr(~tempo*60), '/mXDef', ~mX.kr)};
+~mX = {Lag.kr(Demand.kr(Impulse.kr(~dematempo*~tempo), 0, Drand([1000,200, -345, 800, 0, -1000],inf)), 1)};
+)
+
+OSCdef(\mX).free;
