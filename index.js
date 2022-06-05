@@ -59,25 +59,41 @@ var hydra = new Hydra({
     makeGlobal: false
 }).synth
 
+/*
 var hydra2 = new Hydra({
     canvas: document.getElementById("myCanvas2"),
     detectAudio: false,
     makeGlobal: false
 }).synth
+*/
 
 //shape(4,0.7).mult(osc(5,-0.001,9).modulate(noise(3,1)).rotate(10), 1).modulateScale(osc(4,-0.03,0).kaleid(50).scale(0.6),15,0.1).out()
 
-hydra2.noise().out(hydra2.o0); 
+// hydra2.noise().out(hydra2.o0); 
 hydra.osc(10).out(hydra.o0);
 
+/*
+hydra.shape(20,0.5,1.5)
+    .scale(0.2,0.4)
+    .color(0.3,0,[0.9,2,9].smooth(1))
+    .repeat(9,5)
+    .modulateScale(hydra.osc(3,0.5),-0.6)
+    .scrollX(-0.2,-0.3)
+    .modulate(hydra.src(hydra.o0),0.9)
+    .add(hydra.o0,0.5)
+    .scale(0.8)
+    .out()
+*/
+    
 const elCanvas = document.getElementById( 'myCanvas');
 elCanvas.style.display = 'none';     
 let vit = new THREE.CanvasTexture(elCanvas);
 
+/*
 const elCanvas2 = document.getElementById( 'myCanvas2');
 elCanvas2.style.display = 'none';     
 let vit2 = new THREE.CanvasTexture(elCanvas2);
-
+*/
 
 Tone.start().then(init()); 
 
@@ -86,6 +102,7 @@ let anSphere = false, anObject = false;
 let vertices = []; 
 let boolMesh = true; 
 let meshFinal; 
+let rocas; 
 
 function init(){
 
@@ -133,10 +150,9 @@ function init(){
 	
     }
 
-
-    const geometryP = new THREE.PlaneGeometry( 16*2, 9*2 );
-    const materialP = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide, map: vit2 } );
-    const plane = new THREE.Mesh( geometryP, materialP );
+    // const geometryP = new THREE.PlaneGeometry( 16*2, 9*2 );
+    // const materialP = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide, map: vit2 } );
+    // const plane = new THREE.Mesh( geometryP, materialP );
     // scene.add( plane );
 
     materialC2 = new THREE.MeshBasicMaterial( {
@@ -150,6 +166,7 @@ function init(){
 	// envMap: alpha < 0.5 ? reflectionCube : null
     } );
 
+    
 	
     const sphGeom = new THREE.SphereGeometry( 20, 64, 64 );
     sph = new THREE.Mesh(sphGeom, materialC2); 
@@ -216,6 +233,7 @@ function init(){
 	);
     */
 
+    /*
     let vertices = [];
     let normales = []; 
     const cantidad = 1000;
@@ -225,11 +243,11 @@ function init(){
 
 	    let lat = THREE.MathUtils.mapLinear(i, 0, cantidad,  -Math.PI, Math.PI);
 	    let lon = THREE.MathUtils.mapLinear(j, 0, cantidad, -Math.PI, Math.PI);
-	    /*
-	    let x = 1.5 * Math.cos(lat) * (1.5 + Math.sin(lon) * Math.cos(lat) - Math.sin(2*lon) * Math.sin(lat) / 2);
-            let y = 1.5 * Math.sin(lat) * (1.5 + Math.sin(lon) * Math.cos(lat) - Math.sin(2*lon) * Math.sin(lat) / 2) ;
-            let z = 1.5 * Math.sin(lat) * Math.sin(lon) + Math.cos(lat) * Math.sin(2*lon) / 2 ;
-	    */
+	    
+	    //let x = 1.5 * Math.cos(lat) * (1.5 + Math.sin(lon) * Math.cos(lat) - Math.sin(2*lon) * Math.sin(lat) / 2);
+            //let y = 1.5 * Math.sin(lat) * (1.5 + Math.sin(lon) * Math.cos(lat) - Math.sin(2*lon) * Math.sin(lat) / 2) ;
+            //let z = 1.5 * Math.sin(lat) * Math.sin(lon) + Math.cos(lat) * Math.sin(2*lon) / 2 ;
+	    
 
 	    let x =  2 * Math.cos(lat) * Math.cos(lon);
 	    let y =  2 * Math.sin(lat) * Math.cos(lon);
@@ -255,6 +273,8 @@ function init(){
 	geometry2.attributes.position.setY(i, vertices[i*3+1]); 
 	geometry2.attributes.position.setZ(i, vertices[i*3+2]); 
     }
+
+*/
 
     // console.log(vertices); 
     // scene.add(meshFinal); 
@@ -287,7 +307,7 @@ function init(){
 	
 	switch(  message.args[0] ) {
 	case 0:
-	   
+	    
 	    hydra.osc(mY, 0.1, 0.1)
 	    // .color(0.85, 0.85, 0.85)
 		.kaleid(3)
@@ -418,6 +438,7 @@ function init(){
 	}
     });
 
+    /*
     osc2.on('/meshFinal', message => {
 	boolMesh = message.args[0];
 	// console.log( retroBool );
@@ -427,6 +448,7 @@ function init(){
 	    rmMesh(); 
 	}
     });
+    */
     
     osc2.on('/camX', message => {
 	camera.position.x = message.args[0];
@@ -447,6 +469,8 @@ function init(){
      osc2.on('/mY', message => {
 	mY = message.args[0];
     })
+
+    //addMesh();
     
     animate();
 
@@ -503,11 +527,13 @@ function animate() {
     }
 
     cuboGrande.geometry.attributes.position.needsUpdate = true;
+
     /*
     camera.position.x = Math.sin( time2 * 0.125/4 ) * ( 75 + Math.sin( time2 * 0.125 )* 4) * 1; 
     camera.position.y = Math.cos( time2 * 0.125/4 ) * 200; 
     camera.position.z = Math.cos( time2 * 0.125/4 ) * - 200;
     */
+
     camera.lookAt(0, 0, 0);
    
     /*
@@ -522,7 +548,7 @@ function animate() {
     */
     
     vit.needsUpdate = true; 
-    vit2.needsUpdate = true; 
+    // vit2.needsUpdate = true; 
 
     for(let i = 0; i < total; i++){
 	cubos[i].rotation.y += 0.005; 
@@ -573,13 +599,15 @@ function retroadd(){
     scene.add( cuboGrande ); 
 }
 
-function addMesh(){
-    scene.add(meshFinal); 
-}
+/*
+  function addMesh(){
+  scene.add(meshFinal); 
+  }
 
-function rmMesh(){
-    scene.remove(meshFinal); 
-}
+  function rmMesh(){
+  scene.remove(meshFinal); 
+  }
+*/
 
 function audio(){
     
@@ -587,5 +615,34 @@ function audio(){
     an.smoothing = 0.99
     const mic = new Tone.UserMedia().connect( an );
     mic.open();
+
+    let contador = 0;
+    let sw = true;
+    let conti = true; 
+    
+    rocas = new Tone.Loop((time) => {
+	// console.log("hola");
+	if(sw == true){
+	    scene.add(cubos[contador]); 
+	    contador++;
+	} else {
+	    scene.remove(cubos[contador]); 
+	    contador--;
+	}
+
+	if(contador == 256){
+	    sw = false; 
+	}
+
+	if(contador == -1){
+	    rocas.stop(); 
+	}
+
+	console.log(contador); 
+	
+    }, "0.5");
+
+    Tone.Transport.start();
+    rocas.start(); 
     
 }
