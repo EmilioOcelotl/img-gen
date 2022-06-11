@@ -3,6 +3,8 @@
 m = NetAddr("localhost", 41234);// local machine
 )
 
+m.sendMsg("/iniciar", 1);
+
 m.sendMsg("/switchHydra",0);
 m.sendMsg("/cubos", 1);
 m.sendMsg("/bloom", 0);
@@ -11,8 +13,10 @@ m.sendMsg("/retroB", 1);
 m.sendMsg("/camX", 100);
 m.sendMsg("/camY", 200);
 m.sendMsg("/camZ", 1);
-m.sendMsg("/mX", 1500);
+m.sendMsg("/mX", 100);
 m.sendMsg("/meshFinal", 1);
+
+Array
 
 (
 OSCdef( \camX, {|msg|
@@ -22,6 +26,8 @@ OSCdef( \camX, {|msg|
 ~camXSend = {SendReply.kr(Impulse.kr(~tempo*60), '/camXDef', ~camX.kr)};
 ~camX = {Lag.kr(Demand.kr(Impulse.kr(1*~tempo*0.5), 0, Drand([0,1, 10, 200, -200, 400, -350, 600, 789]*0.5,inf)), 2)};
 )
+
+
 
 OSCdef(\camX).free;
 

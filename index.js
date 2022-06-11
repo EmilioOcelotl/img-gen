@@ -1,3 +1,6 @@
+
+// se ve muy raro hydra como textura
+
 import * as Tone from 'tone';
 import * as THREE from 'three';
 import { OrbitControls } from './jsm/controls/OrbitControls.js';
@@ -15,9 +18,7 @@ osc2.open();
 document.body.style.cursor = 'none'; 
 
 let renderer2, scene, camera, composer, controls; 
-
 let cube, ring, ring2, ring3;
-
 let switchHydra = 0, switchModel = 0; 
 
 /*
@@ -56,8 +57,8 @@ let total = 256;
 var hydra = new Hydra({
     canvas: document.getElementById("myCanvas"),
     detectAudio: false,
-    makeGlobal: false
-}).synth
+    //makeGlobal: false
+}) // antes tenía .synth aqui 
 
 /*
 var hydra2 = new Hydra({
@@ -70,7 +71,7 @@ var hydra2 = new Hydra({
 //shape(4,0.7).mult(osc(5,-0.001,9).modulate(noise(3,1)).rotate(10), 1).modulateScale(osc(4,-0.03,0).kaleid(50).scale(0.6),15,0.1).out()
 
 // hydra2.noise().out(hydra2.o0); 
-hydra.osc(10).out(hydra.o0);
+osc(10).out(o0);
 
 /*
 hydra.shape(20,0.5,1.5)
@@ -102,12 +103,14 @@ let anSphere = false, anObject = false;
 let vertices = []; 
 let boolMesh = true; 
 let meshFinal; 
-let rocas; 
+let rocas;
+let velocidadCubos = 1; 
+let velocidadEnt = 1; 
 
 function init(){
 
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 2000 );
 
     // scene.fog = new THREE.Fog(0x000000, 10, 960);
 
@@ -117,7 +120,7 @@ function init(){
     scene.background = new THREE.Color( 0xffffff ); 
     
     //const geometry = new THREE.BoxGeometry(3, 3, 3);
-    const geometry = new THREE.SphereGeometry(15, 2, 3 );
+    const geometry = new THREE.SphereGeometry(12, 5, 3 );
     // Buffergeometry 
     // console.log(geometry.attributes.position); 
     const material = new THREE.MeshBasicMaterial( { color: 0xffffff, map:texture,  side: THREE.DoubleSide } );
@@ -171,7 +174,7 @@ function init(){
     const sphGeom = new THREE.SphereGeometry( 20, 64, 64 );
     sph = new THREE.Mesh(sphGeom, materialC2); 
     
-    audioSphere = new THREE.SphereGeometry( 500, 64, 64 );
+    audioSphere = new THREE.SphereGeometry( 1000, 64, 64 );
     // audioSphere = new THREE.CylinderGeometry( 500, 500, 500, 6 );
     //audioSphere = new THREE.BoxGeometry( 500, 500, 500, 32, 32, 32 )
     audioSphere.usage = THREE.DynamicDrawUsage;
@@ -279,8 +282,8 @@ function init(){
     // console.log(vertices); 
     // scene.add(meshFinal); 
     
-    // renderer2 = new THREE.WebGLRenderer({ antialias: true });
-    renderer2 = new THREE.WebGLRenderer();
+    renderer2 = new THREE.WebGLRenderer({ antialias: true });
+    // renderer2 = new THREE.WebGLRenderer();
 
     renderer2.setSize( window.innerWidth, window.innerHeight );
     document.body.appendChild( renderer2.domElement ); 
@@ -308,13 +311,13 @@ function init(){
 	switch(  message.args[0] ) {
 	case 0:
 	    
-	    hydra.osc(mY, 0.1, 0.1)
+	    osc(mY, 0.1, 0.1)
 	    // .color(0.85, 0.85, 0.85)
 		.kaleid(3)
 		.rotate(10, 0.1)
-		.modulate(hydra.o0, () => (mX * 0.0003))
+		.modulate(o0, () => (mX * 0.0003))
 		.scale(1.05)
-		.out(hydra.o0)
+		.out(o0)
 	    break;
 	case 1:
 	    voronoi(8,1)
@@ -438,6 +441,14 @@ function init(){
 	}
     });
 
+
+    osc2.on('/iniciar', message => {
+	// bloomPass.strength = message.args[0];
+	if(message.args[0]){
+	    rocas.start();
+	}
+    });
+
     /*
     osc2.on('/meshFinal', message => {
 	boolMesh = message.args[0];
@@ -470,7 +481,9 @@ function init(){
 	mY = message.args[0];
     })
 
-    //addMesh();
+    
+    //addqMesh();
+    score();
     
     animate();
 
@@ -481,23 +494,25 @@ function animate() {
     requestAnimationFrame( animate );
 
     var time2 = Date.now() * 0.005;
-    var time = Date.now() * 0.0001;
+    var time = Date.now() * 0.0001; // por aquí podría estar un parámetro de velocidad 
     let perlin = new ImprovedNoise();
 
     for( var i = 0; i < total; i++){
 	
-	let d = perlin.noise(pX[i]*4+time,
-			     pY[i]*4+time,
-			     pZ[i]*4+time ) * 1
+	let d = perlin.noise(pX[i]*1+time,
+			     pY[i]*1+time,
+			     pZ[i]*1+time ) * velocidadCubos
 
 	cubos[i].position.x = (pX[i]*200)* (1+d);
 	cubos[i].position.y = (pY[i] *200)* (1+d);
 	cubos[i].position.z = (pZ[i]* 200)* (1+d);
 
-	cubos[i].scale.x = 1* (d)*4;
-	cubos[i].scale.y = 1* (d)*4;
-	cubos[i].scale.z = 1* (d)*4;
-
+	/*
+	cubos[i].scale.x = 1* (d)*1;
+	cubos[i].scale.y = 1* (d)*1;
+	cubos[i].scale.z = 1* (d)*1;
+	*/
+	
 	cubos[i].rotation.x = 1* (d)*4;
 	cubos[i].rotation.y = 1* (d)*4;
 	cubos[i].rotation.z = 1* (d)*4;
@@ -507,9 +522,9 @@ function animate() {
 
     for ( var i = 0; i < cuboGrande.geometry.attributes.position.count; i++){
 
-	let d = perlin.noise( cuboGrande.geometry.attributes.position.getX(i)*0.001+time,
-			      cuboGrande.geometry.attributes.position.getY(i)*0.001+time,
-			      cuboGrande.geometry.attributes.position.getZ(i)*0.001+time ) * 0.5
+	let d = perlin.noise( cuboGrande.geometry.attributes.position.getX(i)*0.0001+time,
+			      cuboGrande.geometry.attributes.position.getY(i)*0.0001+time,
+			      cuboGrande.geometry.attributes.position.getZ(i)*0.0001+time ) * 1
 
 	cuboGrande.geometry.attributes.position.setX(
 	    i, (cuboGrandeCopy.geometry.attributes.position.getX(i)) * (1+d)
@@ -573,7 +588,6 @@ function animate() {
 
 function onWindowResize() {
 
-    
     //windowHalfX = window.innerWidth / 2;
     //windowHalfY = window.innerHeight / 2;
     
@@ -616,12 +630,18 @@ function audio(){
     const mic = new Tone.UserMedia().connect( an );
     mic.open();
 
+}
+
+// Diseño del score: sería algo así como distribuir la totalidad de la rola en tres escenas que agregan o quitan elementos 
+
+function score(){
+
     let contador = 0;
     let sw = true;
     let conti = true; 
     
     rocas = new Tone.Loop((time) => {
-	// console.log("hola");
+	
 	if(sw == true){
 	    scene.add(cubos[contador]); 
 	    contador++;
@@ -635,14 +655,15 @@ function audio(){
 	}
 
 	if(contador == -1){
-	    rocas.stop(); 
+	    // rocas.stop(); // aquí podría activarse el siguiente momento
+	    console.log("final");
+	    sw = true; 
 	}
 
-	console.log(contador); 
+	// console.log(contador); 
 	
-    }, "0.5");
+    }, "0.05");
 
     Tone.Transport.start();
-    rocas.start(); 
     
 }
