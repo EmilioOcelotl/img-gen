@@ -65,10 +65,30 @@ var hydra2 = new Hydra({
     makeGlobal: false
 }).synth
 
+
+hydra.osc(mY, 0.1, 0.1)
+    .color(0.9, 0.9, 2)
+    .kaleid(3)
+    .rotate(10, 0.1)
+    .modulate(hydra.o0, () => (mX * 0.0003))
+    .scale(1.05)
+    .out(hydra.o0)
+
 //shape(4,0.7).mult(osc(5,-0.001,9).modulate(noise(3,1)).rotate(10), 1).modulateScale(osc(4,-0.03,0).kaleid(50).scale(0.6),15,0.1).out()
 
-hydra2.noise().out(hydra2.o0); 
-hydra.osc(10).out(hydra.o0);
+// hydra2.noise().out(hydra2.o0); 
+// hydra.osc(10).out(hydra.o0);
+
+hydra2.shape(20,0.5,1.5)                                                                                                                                      
+    .scale(0.2,0.4)                                                                                                                                           
+    .color(0.9,0.9, 2)                                                                                                                         
+    .repeat(9,5)                                                                                                                                              
+    .modulateScale(hydra.osc(2,0.5),-0.6)                                                                                                                     
+    .scrollX(-0.02,-0.03)                                                                                                                                     
+    .modulate(hydra.src(hydra.o0),0.9)                                                                                                                        
+    .add(hydra.o0,0.5)                                                                                                                                        
+    .scale(0.8)                                                                                                                                               
+    .out()
 
 const elCanvas = document.getElementById( 'myCanvas');
 elCanvas.style.display = 'none';     
@@ -90,20 +110,26 @@ let meshFinal;
 function init(){
 
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 2000 );
 
     // scene.fog = new THREE.Fog(0x000000, 10, 960);
+
+    
+    const light = new THREE.PointLight( 0xffffff, 1 );
+    light.position.y = 10;
+    light.position.x = 1; 
+    scene.add( light );
 
     retro();
 
     audio(); 
-    scene.background = new THREE.Color( 0xffffff ); 
+    // scene.background = new THREE.Color( 0x000000 ); 
     
     //const geometry = new THREE.BoxGeometry(3, 3, 3);
     const geometry = new THREE.SphereGeometry(15, 2, 3 );
     // Buffergeometry 
     // console.log(geometry.attributes.position); 
-    const material = new THREE.MeshBasicMaterial( { color: 0xffffff, map:texture,  side: THREE.DoubleSide } );
+    const material = new THREE.MeshBasicMaterial( { color: 0xffffff, map:vit2,  side: THREE.DoubleSide } );
 
     for(let i = 0; i < total; i++){
   
@@ -133,11 +159,45 @@ function init(){
 	
     }
 
+    
+    const geometryP = new THREE.PlaneGeometry( 16*40, 16*40, 16, 16 );
 
-    const geometryP = new THREE.PlaneGeometry( 16*2, 9*2 );
-    const materialP = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide, map: vit2 } );
+    const materialP = new THREE.MeshBasicMaterial( {
+	color: 0xd9e1f9,
+	emissive: 0x4b0f61,
+	side: THREE.DoubleSide,
+	roughness: 0.1,
+	metalness: 0.7,
+	 wireframe: true,
+	wireframeLinewidth: 2,
+	// blendingMode: THREE.AdditiveBlending
+    } );
+
+
     const plane = new THREE.Mesh( geometryP, materialP );
-    // scene.add( plane );
+    plane.rotation.x = Math.PI/2;
+
+    geometryP.attributes.position.needsUpdate = true;
+    // geometry2.computeVertexNormals(); 
+    
+    for(let i = 0; i < geometryP.attributes.position.count; i++){
+	geometryP.attributes.position.setZ(i, Math.random() * 40);
+    }
+
+    plane.position.y = -10; 
+    // plane.position.z = -100;
+    const geometryBasic = new THREE.PlaneGeometry( 20, 20, 32, 32 );
+
+    const materialBasic = new THREE.MeshBasicMaterial({ color: 0xffffff, 
+							   side: THREE.DoubleSide,
+							   roughness: 0.5,
+							   metalness: 0.2 })
+    
+    const plane2 = new THREE.Mesh(geometryBasic, materialBasic);
+
+    scene.add( plane2 ); 
+    
+    scene.add( plane );
 
     materialC2 = new THREE.MeshBasicMaterial( {
 	map: vit,
@@ -161,8 +221,8 @@ function init(){
 	
     audioSphere.computeBoundingBox();	  
   
-    cuboGrande = new THREE.Mesh(audioSphere, materialC2 );
-    cuboGrandeCopy = new THREE.Mesh(audioSphere.clone(), materialC2 );
+    cuboGrande = new THREE.Mesh(audioSphere, material );
+    cuboGrandeCopy = new THREE.Mesh(audioSphere.clone(), material );
 
     // materialC2.depthTest = false; 
     cuboGrande.geometry.usage = THREE.DynamicDrawUsage;
@@ -223,18 +283,25 @@ function init(){
     for(let i = 0; i < cantidad; i++){
 	for(let j = 0; j < cantidad; j++){
 
+	    /*
 	    let lat = THREE.MathUtils.mapLinear(i, 0, cantidad,  -Math.PI, Math.PI);
 	    let lon = THREE.MathUtils.mapLinear(j, 0, cantidad, -Math.PI, Math.PI);
-	    /*
-	    let x = 1.5 * Math.cos(lat) * (1.5 + Math.sin(lon) * Math.cos(lat) - Math.sin(2*lon) * Math.sin(lat) / 2);
-            let y = 1.5 * Math.sin(lat) * (1.5 + Math.sin(lon) * Math.cos(lat) - Math.sin(2*lon) * Math.sin(lat) / 2) ;
-            let z = 1.5 * Math.sin(lat) * Math.sin(lon) + Math.cos(lat) * Math.sin(2*lon) / 2 ;
 	    */
 
-	    let x =  2 * Math.cos(lat) * Math.cos(lon);
-	    let y =  2 * Math.sin(lat) * Math.cos(lon);
-	    let z =  2 * Math.sin(lon) + 1*lat;  
+	    let lat = THREE.MathUtils.mapLinear(i, 0, cantidad,  -Math.PI/4, Math.PI);
+	    let lon = THREE.MathUtils.mapLinear(j, 0, cantidad, -Math.PI, Math.PI);
 	    
+	    
+	    let x = 1.5 * Math.cos(lat) * (1.5 + Math.sin(lon) * Math.cos(lat) - Math.sin(4*lon) * Math.sin(lat) / 2);
+            let y = 1.5 * Math.sin(lat) * (1.5 + Math.sin(lon) * Math.cos(lat) - Math.sin(4*lon) * Math.sin(lat) / 2) ;
+            let z = 1.5 * Math.sin(lat) * Math.sin(lon) + Math.cos(lat) * Math.sin(2*lon) / 2 ;
+	    
+
+	    /*
+	    let x =  1 * Math.cos(lat) * Math.cos(lon);
+	    let y =  1 * Math.sin(lat) * Math.cos(lon);
+	    let z =  1 * Math.sin(lon) + 1*lat;  
+	    */
 	    vertices.push(x, y, z);
 	   
 	}
@@ -242,11 +309,17 @@ function init(){
 
     const geometry2 = new THREE.PlaneGeometry( 5, 5, cantidad, cantidad);
 
-    meshFinal = new THREE.Mesh(geometry2, material );
-    meshFinal.scale.x = 16; 
-    meshFinal.scale.y = 16; 
-    meshFinal.scale.z = 16; 
-     
+    
+    meshFinal = new THREE.Mesh(geometry2, materialC2 );
+    meshFinal.scale.x = 4; 
+    meshFinal.scale.y = 4; 
+    meshFinal.scale.z = 4; 
+
+    meshFinal.position.x = -15;
+    meshFinal.position.z = -15; 
+    
+    scene.add(meshFinal); 
+    
     geometry2.attributes.position.needsUpdate = true;
     // geometry2.computeVertexNormals(); 
 
@@ -270,25 +343,25 @@ function init(){
     const renderScene = new RenderPass( scene, camera );
     
     const bloomPass = new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
-    bloomPass.threshold = 0.3;
-    bloomPass.strength = 0.1; // parametrizable 
-    bloomPass.radius = 0.8;
+    bloomPass.threshold = 0.9;
+    bloomPass.strength = 0.4; // parametrizable 
+    bloomPass.radius = 0.1;
     
     composer = new EffectComposer( renderer2 );
     composer.addPass( renderScene );
     composer.addPass( bloomPass );
 
     controls = new OrbitControls( camera, renderer2.domElement );
-    controls.maxDistance = 300;
+    controls.maxDistance = 1000;
 
     osc2.on('/switchHydra', message => {
 
 	hydra.hush();
 	
-	switch(  message.args[0] ) {
+	switch(  0 ) {
 	case 0:
 	   
-	    hydra.osc(mY, 0.1, 0.1)
+	    hydra.osc(mY, 0.1, 0)
 	    // .color(0.85, 0.85, 0.85)
 		.kaleid(3)
 		.rotate(10, 0.1)
@@ -503,11 +576,11 @@ function animate() {
     }
 
     cuboGrande.geometry.attributes.position.needsUpdate = true;
-    /*
-    camera.position.x = Math.sin( time2 * 0.125/4 ) * ( 75 + Math.sin( time2 * 0.125 )* 4) * 1; 
-    camera.position.y = Math.cos( time2 * 0.125/4 ) * 200; 
-    camera.position.z = Math.cos( time2 * 0.125/4 ) * - 200;
-    */
+    
+    camera.position.x = Math.sin( time2 * 0.125/4 ) * ( 45 + Math.sin( time2 * 0.125 )* 4) * 1; 
+    // camera.position.y = Math.cos( time2 * 0.125/4 ) * 200; 
+    camera.position.z = Math.cos( time2 * 0.125/4 ) * - 40;
+    
     camera.lookAt(0, 0, 0);
    
     /*
@@ -528,9 +601,6 @@ function animate() {
 	cubos[i].rotation.y += 0.005; 
     }
     
-    //cube.rotation.x += 0.001;
-    //cube.rotation.y += 0.002;
-
     // camera.rotation.x +- 0.01; 
    
     renderer2.render( scene, camera );
