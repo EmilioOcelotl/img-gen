@@ -106,6 +106,7 @@ let anSphere = false, anObject = false;
 let vertices = []; 
 let boolMesh = true; 
 let meshFinal; 
+let plane; 
 
 function init(){
 
@@ -114,14 +115,12 @@ function init(){
 
     // scene.fog = new THREE.Fog(0x000000, 10, 960);
 
-    
     const light = new THREE.PointLight( 0xffffff, 1 );
     light.position.y = 10;
     light.position.x = 1; 
     scene.add( light );
 
     retro();
-
     audio(); 
     // scene.background = new THREE.Color( 0x000000 ); 
     
@@ -158,7 +157,6 @@ function init(){
 	// scene.add( cubos[i] );
 	
     }
-
     
     const geometryP = new THREE.PlaneGeometry( 16*40, 16*40, 16, 16 );
 
@@ -174,7 +172,7 @@ function init(){
     } );
 
 
-    const plane = new THREE.Mesh( geometryP, materialP );
+    plane = new THREE.Mesh( geometryP, materialP );
     plane.rotation.x = Math.PI/2;
 
     geometryP.attributes.position.needsUpdate = true;
@@ -533,6 +531,18 @@ function animate() {
     var time = Date.now() * 0.0001;
     let perlin = new ImprovedNoise();
 
+    plane.geometry.attributes.position.needsUpdate = true;
+    // geometry2.computeVertexNormals(); 
+    
+    for(let i = 0; i < plane.geometry.attributes.position.count; i++){
+	let d = perlin.noise(plane.geometry.attributes.position.getX(i)*0.0075+time,
+			     plane.geometry.attributes.position.getY(i)*0.0075+time,
+			     plane.geometry.attributes.position.getZ(i)*0.0075+time ) * 1
+
+	plane.geometry.attributes.position.setZ(i, 60*(d+1));
+    }
+
+    
     for( var i = 0; i < total; i++){
 	
 	let d = perlin.noise(pX[i]*4+time,
