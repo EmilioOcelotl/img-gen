@@ -50,7 +50,10 @@ let bamboo = [];
 let cubos = [];
 
 let pX = [], pY = [], pZ = []; 
-let mX = 1000, mY = 10; 
+
+// let mX = 1000, mY = 10; 
+
+let osci=10, kal=5, voro=5, vorvel=0.5, ang=10, rotvel=0.1, mod=1000, scl = 0.49, sclX = 1.05, sclY = 0.95, sat = 1;  
 
 let total = 256;
 
@@ -120,7 +123,7 @@ function init(){
     scene.background = new THREE.Color( 0xffffff ); 
     
     //const geometry = new THREE.BoxGeometry(3, 3, 3);
-    const geometry = new THREE.SphereGeometry(12, 5, 3 );
+    const geometry = new THREE.SphereGeometry(12, 4, 5 );
     // Buffergeometry 
     // console.log(geometry.attributes.position); 
     const material = new THREE.MeshBasicMaterial( { color: 0xffffff, map:texture,  side: THREE.DoubleSide } );
@@ -293,7 +296,7 @@ function init(){
     const renderScene = new RenderPass( scene, camera );
     
     const bloomPass = new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
-    bloomPass.threshold = 0.3;
+    bloomPass.threshold = 0.8;
     bloomPass.strength = 0.1; // parametrizable 
     bloomPass.radius = 0.8;
     
@@ -310,14 +313,15 @@ function init(){
 	
 	switch(  message.args[0] ) {
 	case 0:
-	    
-	    osc(mY, 0.1, 0.1)
-	    // .color(0.85, 0.85, 0.85)
-		.kaleid(3)
-		.rotate(10, 0.1)
-		.modulate(o0, () => (mX * 0.0003))
-		.scale(1.05)
-		.out(o0)
+	    osc(osci, 0.1, 0) // osci                          
+                .kaleid(kal) // kal
+		.diff(voronoi(voro, vorvel, 0) // voro, vorovel
+		     )
+                .rotate(ang, rotvel) // ang, rotvel 
+                .modulateScrollX(o0, () => (mod * 0.0003)) // mod (antes estaba solo modulate)  
+                .scale(scl, sclX, sclY) // scl, sclX, sclY
+		.saturate(sat) // sat
+                .out(o0)
 	    break;
 	case 1:
 	    voronoi(8,1)
@@ -441,7 +445,6 @@ function init(){
 	}
     });
 
-
     osc2.on('/iniciar', message => {
 	// bloomPass.strength = message.args[0];
 	if(message.args[0]){
@@ -481,12 +484,52 @@ function init(){
 	mY = message.args[0];
     })
 
-    
-    //addqMesh();
-    score();
-    
-    animate();
+    osc2.on('/osci', message => {
+	osci = message.args[0];
+    })
 
+    osc2.on('/kal', message => {
+	kal = message.args[0];
+    })
+
+    osc2.on('/voro', message => {
+	voro = message.args[0];
+    })
+
+    osc2.on('/vorvel', message => {
+	vorvel = message.args[0];
+    })
+
+     osc2.on('/ang', message => {
+	ang = message.args[0];
+    })
+
+    osc2.on('/rotvel', message => {
+	rotvel = message.args[0];
+    })
+
+    osc2.on('/mod', message => {
+	mod = message.args[0];
+    })
+
+     osc2.on('/scl', message => {
+	scl = message.args[0];
+     })
+
+    osc2.on('/sclX', message => {
+	sclX = message.args[0];
+    })
+
+    osc2.on('/sclY', message => {
+	sclY = message.args[0];
+    })
+
+    osc2.on('/sat', message => {
+	sat = message.args[0];
+    })
+
+    score();
+    animate();
     
 }
 function animate() {
@@ -543,11 +586,11 @@ function animate() {
 
     cuboGrande.geometry.attributes.position.needsUpdate = true;
 
-    /*
+    
     camera.position.x = Math.sin( time2 * 0.125/4 ) * ( 75 + Math.sin( time2 * 0.125 )* 4) * 1; 
     camera.position.y = Math.cos( time2 * 0.125/4 ) * 200; 
     camera.position.z = Math.cos( time2 * 0.125/4 ) * - 200;
-    */
+    
 
     camera.lookAt(0, 0, 0);
    
@@ -568,9 +611,10 @@ function animate() {
     for(let i = 0; i < total; i++){
 	cubos[i].rotation.y += 0.005; 
     }
+
     
-    //cube.rotation.x += 0.001;
-    //cube.rotation.y += 0.002;
+    cuboGrande.rotation.x += 0.0001;
+    cuboGrande.rotation.y += 0.0002;
 
     // camera.rotation.x +- 0.01; 
    
@@ -636,6 +680,8 @@ function audio(){
 
 function score(){
 
+    let metaContador = 0; 
+    
     let contador = 0;
     let sw = true;
     let conti = true; 
@@ -657,12 +703,32 @@ function score(){
 	if(contador == -1){
 	    // rocas.stop(); // aquí podría activarse el siguiente momento
 	    console.log("final");
-	    sw = true; 
+	    sw = true;
+	    metaContador++;
+	    // if(metaContador == 2) {
+	    rocas.stop();
+
+	    /*
+	    osc2.on('open', () => {
+		const message = new OSC.Message('/test', 12.221, 'hello')
+		osc2.send(message);
+		})
+	    */
+
+	    send = (address = "", args) => {
+		var message = new OSC.Message(address, args)
+		osc2.send(message);
+	    }
+	    
+	    // execute this line to send an osc message
+	    send('/regreso', "////Terminó la vuelta "+metaContador+"////");
+	    
+	    // }
 	}
 
 	// console.log(contador); 
 	
-    }, "0.05");
+    }, "0.05"); // 50 segundos x ( 7 - 8 ) = ( 5.8 - 6.6 )  min 
 
     Tone.Transport.start();
     

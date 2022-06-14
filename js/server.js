@@ -10,8 +10,8 @@ const config = {
     udpClient: {
       host: 'localhost',    // @param {string} Hostname of udp client for messaging
       // port: 41235           // @param {number} Port of udp client for messaging
-      // port: 57120 // supercollider 
-      port: 3000 // puredata 
+      port: 57120 // supercollider 
+      // port: 3000 // puredata 
    },
     wsServer: {
       host: 'localhost',    // @param {string} Hostname of WebSocket server
