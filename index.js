@@ -11,13 +11,16 @@ import { EffectComposer } from './jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from './jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from './jsm/postprocessing/UnrealBloomPass.js';
 import { OBJLoader } from './jsm/loaders/OBJLoader.js';
+import { ShaderPass } from './jsm/postprocessing/ShaderPass.js';
+import { CopyShader } from './jsm/shaders/CopyShader.js';
+import { FXAAShader } from './jsm/shaders/FXAAShader.js';
 
 const osc2 = new OSC();
 osc2.open();
 
 document.body.style.cursor = 'none'; 
 
-let renderer2, scene, camera, composer, controls; 
+let renderer2, scene, camera, composer, controls, container; 
 let cube, ring, ring2, ring3;
 let switchHydra = 0, switchModel = 0; 
 
@@ -55,7 +58,7 @@ let pX = [], pY = [], pZ = [];
 
 let osci=10, kal=5, voro=5, vorvel=0.5, ang=10, rotvel=0.1, mod=1000, scl = 0.49, sclX = 1.05, sclY = 0.95, sat = 1;  
 
-let total = 256;
+let total = 128;
 
 var hydra = new Hydra({
     canvas: document.getElementById("myCanvas"),
@@ -112,8 +115,10 @@ let velocidadEnt = 1;
 
 function init(){
 
+    container = document.getElementById( 'container' );
+    
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 2000 );
+    camera = new THREE.PerspectiveCamera( 75, container.offsetWidth / container.offsetHeight, 0.1, 2000 );
 
     // scene.fog = new THREE.Fog(0x000000, 10, 960);
 
@@ -123,10 +128,10 @@ function init(){
     scene.background = new THREE.Color( 0xffffff ); 
     
     //const geometry = new THREE.BoxGeometry(3, 3, 3);
-    const geometry = new THREE.SphereGeometry(12, 4, 5 );
+    const geometry = new THREE.SphereGeometry(96, 4, 3 );
     // Buffergeometry 
     // console.log(geometry.attributes.position); 
-    const material = new THREE.MeshBasicMaterial( { color: 0xffffff, map:texture,  side: THREE.DoubleSide } );
+    const material = new THREE.MeshBasicMaterial( { color: 0xffffff, map:texture } );
 
     for(let i = 0; i < total; i++){
   
@@ -285,23 +290,35 @@ function init(){
     // console.log(vertices); 
     // scene.add(meshFinal); 
     
-    renderer2 = new THREE.WebGLRenderer({ antialias: true });
+    renderer2 = new THREE.WebGLRenderer();
     // renderer2 = new THREE.WebGLRenderer();
+    renderer2.setSize( container.offsetWidth, container.offsetHeight );
+    container.appendChild( renderer2.domElement );
 
-    renderer2.setSize( window.innerWidth, window.innerHeight );
-    document.body.appendChild( renderer2.domElement ); 
+    //renderer2.setSize( window.innerWidth, window.innerHeight );
+    // document.body.appendChild( renderer2.domElement ); 
 
-     window.addEventListener( 'resize', onWindowResize);
+    window.addEventListener( 'resize', onWindowResize);
     
     const renderScene = new RenderPass( scene, camera );
+    renderScene.clearColor = new THREE.Color( 0, 0, 0 );
+    renderScene.clearAlpha = 0;
     
-    const bloomPass = new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
+    const bloomPass = new UnrealBloomPass( new THREE.Vector2( container.innerWidth, container.innerHeight ), 1.5, 0.4, 0.85 );
     bloomPass.threshold = 0.8;
     bloomPass.strength = 0.1; // parametrizable 
     bloomPass.radius = 0.8;
+
+    let fxaaPass = new ShaderPass( FXAAShader );
+    const pixelRatio = renderer2.getPixelRatio();
+
+    fxaaPass.material.uniforms[ 'resolution' ].value.x = 1 / ( window.offsetWidth * pixelRatio );
+    fxaaPass.material.uniforms[ 'resolution' ].value.y = 1 / ( window.offsetHeight * pixelRatio );
     
     composer = new EffectComposer( renderer2 );
     composer.addPass( renderScene );
+    composer.addPass( fxaaPass );
+
     composer.addPass( bloomPass );
 
     controls = new OrbitControls( camera, renderer2.domElement );
@@ -313,10 +330,11 @@ function init(){
 	
 	switch(  message.args[0] ) {
 	case 0:
-	    osc(osci, 0.1, 0) // osci                          
+	    osc(osci, 0.1, -0.5) // osci
+		.color(1, 0.9,1.2) 
                 .kaleid(kal) // kal
 		.diff(voronoi(voro, vorvel, 0) // voro, vorovel
-		     )
+		      .color(0, 0, 0))
                 .rotate(ang, rotvel) // ang, rotvel 
                 .modulateScrollX(o0, () => (mod * 0.0003)) // mod (antes estaba solo modulate)  
                 .scale(scl, sclX, sclY) // scl, sclX, sclY
@@ -324,15 +342,17 @@ function init(){
                 .out(o0)
 	    break;
 	case 1:
-	    voronoi(8,1)
-		.mult(osc(10,0.1,0.2))
-		.modulate(o0,0.5)
-		.add(o0,0.8)
-		.scrollY(-0.01)
-		.scale(0.99)
-		.modulate(voronoi(8,1),0.008)
-		.luma(()=>mX*0.0009) 
-		.out()
+	    osc(osci, 0.1, -0.5) // osci
+		.color(1, 0.9,1.2) 
+                .kaleid(kal) // kal
+		.diff(voronoi(voro, vorvel, 0) // voro, vorovel
+		      .color(0, 0, 0))
+                .rotate(ang, rotvel) // ang, rotvel 
+                .modulate(o0, () => (mod * 0.0003)) // mod (antes estaba solo modulate)  
+                .scale(scl, sclX, sclY) // scl, sclX, sclY
+		.saturate(sat) // sat
+                .out(o0)
+
 	    break;
 	case 2:
 	    osc(5, 0.9, 0.00)
@@ -528,6 +548,28 @@ function init(){
 	sat = message.args[0];
     })
 
+    osc2.on('/bamboo', message => {
+	if(message.args[0]){
+	    loc = 0; 
+	    for(let k=0; k<18;k++){
+		for(let i=1;i<6;i++){
+		    scene.add(bamboo[loc]);
+		    loc++; 
+		}
+	    }
+	} else {
+	    loc = 0; 
+	    for(let k=0; k<18;k++){
+		for(let i=1;i<6;i++){
+		    scene.remove(bamboo[loc]);
+		    loc++; 
+		}
+	    }
+
+	}
+    })
+
+
     score();
     animate();
     
@@ -547,14 +589,14 @@ function animate() {
 			     pZ[i]*1+time ) * velocidadCubos
 
 	cubos[i].position.x = (pX[i]*200)* (1+d);
-	cubos[i].position.y = (pY[i] *200)* (1+d);
-	cubos[i].position.z = (pZ[i]* 200)* (1+d);
+	cubos[i].position.y = (pY[i]*200)* (1+d);
+	cubos[i].position.z = (pZ[i]*200)* (1+d);
 
-	/*
+	
 	cubos[i].scale.x = 1* (d)*1;
 	cubos[i].scale.y = 1* (d)*1;
 	cubos[i].scale.z = 1* (d)*1;
-	*/
+
 	
 	cubos[i].rotation.x = 1* (d)*4;
 	cubos[i].rotation.y = 1* (d)*4;
