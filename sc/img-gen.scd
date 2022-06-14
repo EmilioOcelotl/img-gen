@@ -15,17 +15,18 @@ m.sendMsg("/camY", 200);
 m.sendMsg("/camZ", 1);
 m.sendMsg("/mX", 1000)
 m.sendMsg("/mY", 10);
-m.sendMsg("/osci", 10);
-m.sendMsg("/kal", 5);
+m.sendMsg("/osci", 4);
+m.sendMsg("/kal", 1);
 m.sendMsg("/voro", 5);
 m.sendMsg("/vorvel", 0.5);
 m.sendMsg("/ang", 10);
 m.sendMsg("/rotvel", 0.1);
 m.sendMsg("/mod", 1000);
-m.sendMsg("/scl", 0.49);
+m.sendMsg("/scl", 0.45);
 m.sendMsg("/sclX", 1.05);
 m.sendMsg("/sclY", 0.95);
 m.sendMsg("/sat", 1);
+m.sendMsg("/bamboo", 1);
 
 m.sendMsg("/meshFinal", 1);
 
