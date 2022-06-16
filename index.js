@@ -11,9 +11,9 @@ import { EffectComposer } from './jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from './jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from './jsm/postprocessing/UnrealBloomPass.js';
 import { OBJLoader } from './jsm/loaders/OBJLoader.js';
-import { ShaderPass } from './jsm/postprocessing/ShaderPass.js';
-import { CopyShader } from './jsm/shaders/CopyShader.js';
-import { FXAAShader } from './jsm/shaders/FXAAShader.js';
+import { GlitchPass } from './jsm/postprocessing/GlitchPass.js';
+
+let glitchPass;
 
 const osc2 = new OSC();
 osc2.open();
@@ -54,11 +54,13 @@ let cubos = [];
 
 let pX = [], pY = [], pZ = []; 
 
+let total = 100;
 // let mX = 1000, mY = 10; 
 
 let osci=10, kal=5, voro=5, vorvel=0.5, ang=10, rotvel=0.1, mod=1000, scl = 0.49, sclX = 1.05, sclY = 0.95, sat = 1;  
 
 let total = 128;
+
 
 var hydra = new Hydra({
     canvas: document.getElementById("myCanvas"),
@@ -74,9 +76,28 @@ var hydra2 = new Hydra({
 }).synth
 */
 
+
+/*
+hydra.osc(10, 0.1, 0)
+    //.color(0.9, 0.9, 2)
+    .kaleid(5)
+    .rotate(10, 0.1)
+    .modulate(hydra.o0, () => (1000 * 0.0003))
+    .scale(1.01)
+    .out(hydra.o0)
+*/
 //shape(4,0.7).mult(osc(5,-0.001,9).modulate(noise(3,1)).rotate(10), 1).modulateScale(osc(4,-0.03,0).kaleid(50).scale(0.6),15,0.1).out()
 
 // hydra2.noise().out(hydra2.o0); 
+// hydra.osc(10).out(hydra.o0);
+hydra.src(hydra.o0).modulateHue(hydra.src(hydra.o0).scale(1.5),[1,2].smooth()).layer(
+  hydra.osc(10,.1,9).mask(hydra2.shape(99,[.1,.2].smooth(),0))
+  .rotate(0,3)
+  .scrollY(.1,[.1,.2,.3,.4].smooth())
+  .scrollX(.1,.1)
+  .kaleid([2,3,4,3,2].smooth())
+  .rotate(0,2)
+).out(hydra.o0)
 osc(10).out(o0);
 
 /*
@@ -109,6 +130,11 @@ let anSphere = false, anObject = false;
 let vertices = []; 
 let boolMesh = true; 
 let meshFinal; 
+let plane; 
+let torus1; 
+let torus2;
+let torus3, torus4, torus5; 
+let meshFinal2; 
 let rocas;
 let velocidadCubos = 1; 
 let velocidadEnt = 1; 
@@ -118,24 +144,37 @@ function init(){
     container = document.getElementById( 'container' );
     
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera( 75, container.offsetWidth / container.offsetHeight, 0.1, 2000 );
+    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 2000 );
 
     // scene.fog = new THREE.Fog(0x000000, 10, 960);
 
-    retro();
+    
+    const video = document.getElementById( 'video' );
+    const textureV = new THREE.VideoTexture( video );
+    video.play();
 
+    const light = new THREE.PointLight( 0xffffff, 1 );
+    light.position.y = 10;
+    light.position.x = 1; 
+    scene.add( light );
+
+    retro();
     audio(); 
-    scene.background = new THREE.Color( 0xffffff ); 
+    // scene.background = new THREE.Color( 0x000000 ); 
     
     //const geometry = new THREE.BoxGeometry(3, 3, 3);
-    const geometry = new THREE.SphereGeometry(96, 4, 3 );
+    const geometry = new THREE.SphereGeometry(5, 4, 3 );
+
     // Buffergeometry 
     // console.log(geometry.attributes.position); 
     const material = new THREE.MeshBasicMaterial( { color: 0xffffff, map:texture } );
 
+    const material222 = new THREE.MeshBasicMaterial( { color: 0xffffff, map:textureV,  side: THREE.DoubleSide } );
+
+    
     for(let i = 0; i < total; i++){
   
-	cubos[i] = new THREE.Mesh( geometry, material );
+	cubos[i] = new THREE.Mesh( geometry, material222 );
 
 	var posX, posY, posZ;
 	
@@ -157,15 +196,88 @@ function init(){
 	cubos[i].rotation.x = Math.random() * 360; 
 	cubos[i].rotation.y = Math.random() * 360; 
 	cubos[i].rotation.z = Math.random() * 360; 
-	// scene.add( cubos[i] );
+	scene.add( cubos[i] );
 	
     }
+    
+    const geometryP = new THREE.PlaneGeometry( 16*100, 16*100, 16, 16 );
+    const materialP = new THREE.MeshBasicMaterial( {
+	color: 0xd9e1f9,
+	// emissive: 0x4b0f61,
+	side: THREE.DoubleSide,
+	//roughness: 0.1,
+	// metalness: 0.7,
+	wireframe: true,
+	wireframeLinewidth: 2,
+	// blendingMode: THREE.AdditiveBlending
+    } );
 
+    plane = new THREE.Mesh( geometryP, materialP );
+    plane.rotation.x = Math.PI/2;
+
+    geometryP.attributes.position.needsUpdate = true;
+    // geometry2.computeVertexNormals(); 
+    
+    for(let i = 0; i < geometryP.attributes.position.count; i++){
+	geometryP.attributes.position.setZ(i, Math.random() * 40);
+    }
+
+    plane.position.y = -10; 
+    // plane.position.z = -100;
+    const geometryBasic = new THREE.PlaneGeometry( 80, 80, 32, 32 );
+
+    
+    const materialBasic = new THREE.MeshBasicMaterial({ color: 0xffffff, 
+							side: THREE.DoubleSide,
+							map: textureV,
+							//roughness: 0.5,
+							//metalness: 0.2
+						      })
+    
+    const plane2 = new THREE.Mesh(geometryBasic, materialBasic);
+
+    // scene.add( plane2 );     
+    scene.add( plane );
+
+    // let geometryTor = []; 
+    const materialTor = new THREE.MeshStandardMaterial( { color:  0xd9e1f9, roughness: 0.6, metalness: 0.9 } );
+    const geometryTor = new THREE.TorusGeometry( 60, 1.25, 32, 100 );
+    const geometryTor2 = new THREE.TorusGeometry(40, 1.25, 32, 100 );
+    const geometryTor3 = new THREE.TorusGeometry(20, 1.25, 32, 100 );
+    const geometryTor4 = new THREE.TorusGeometry(80, 1.25, 32, 100 );
+    const geometryTor5 = new THREE.TorusGeometry(100, 1.25, 32, 100 );
+
+    torus1 = new THREE.Mesh( geometryTor, materialTor );
+    torus2 = new THREE.Mesh( geometryTor2, materialTor );
+    torus3 = new THREE.Mesh( geometryTor3, materialTor );
+    torus4 = new THREE.Mesh( geometryTor4, materialTor );
+    torus5 = new THREE.Mesh( geometryTor5, materialTor );
+
+    torus1.position.x = 50;
+    torus1.position.z = 50; 
+    scene.add( torus1 );
+
+    torus2.position.x = 50;
+    torus2.position.z = 50; 
+    scene.add( torus2 );
+    
+    torus3.position.x = 50;
+    torus3.position.z = 50; 
+    scene.add( torus3 );
+
+    torus4.position.x = 50;
+    torus4.position.z = 50; 
+    scene.add( torus4 );
+
+    torus5.position.x = 50;
+    torus5.position.z = 50; 
+    scene.add( torus5 );
     // const geometryP = new THREE.PlaneGeometry( 16*2, 9*2 );
     // const materialP = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide, map: vit2 } );
     // const plane = new THREE.Mesh( geometryP, materialP );
     // scene.add( plane );
 
+    
     materialC2 = new THREE.MeshBasicMaterial( {
 	map: vit,
 	side: THREE.DoubleSide,
@@ -182,15 +294,16 @@ function init(){
     const sphGeom = new THREE.SphereGeometry( 20, 64, 64 );
     sph = new THREE.Mesh(sphGeom, materialC2); 
     
-    audioSphere = new THREE.SphereGeometry( 1000, 64, 64 );
+    audioSphere = new THREE.SphereGeometry( 1500, 64, 64 );
+
     // audioSphere = new THREE.CylinderGeometry( 500, 500, 500, 6 );
     //audioSphere = new THREE.BoxGeometry( 500, 500, 500, 32, 32, 32 )
     audioSphere.usage = THREE.DynamicDrawUsage;
 	
     audioSphere.computeBoundingBox();	  
   
-    cuboGrande = new THREE.Mesh(audioSphere, materialC2 );
-    cuboGrandeCopy = new THREE.Mesh(audioSphere.clone(), materialC2 );
+    cuboGrande = new THREE.Mesh(audioSphere, material );
+    cuboGrandeCopy = new THREE.Mesh(audioSphere.clone(), material );
 
     // materialC2.depthTest = false; 
     cuboGrande.geometry.usage = THREE.DynamicDrawUsage;
@@ -252,18 +365,30 @@ function init(){
     for(let i = 0; i < cantidad; i++){
 	for(let j = 0; j < cantidad; j++){
 
+	    /*
 	    let lat = THREE.MathUtils.mapLinear(i, 0, cantidad,  -Math.PI, Math.PI);
 	    let lon = THREE.MathUtils.mapLinear(j, 0, cantidad, -Math.PI, Math.PI);
+	    */
 	    
 	    //let x = 1.5 * Math.cos(lat) * (1.5 + Math.sin(lon) * Math.cos(lat) - Math.sin(2*lon) * Math.sin(lat) / 2);
             //let y = 1.5 * Math.sin(lat) * (1.5 + Math.sin(lon) * Math.cos(lat) - Math.sin(2*lon) * Math.sin(lat) / 2) ;
             //let z = 1.5 * Math.sin(lat) * Math.sin(lon) + Math.cos(lat) * Math.sin(2*lon) / 2 ;
 	    
 
-	    let x =  2 * Math.cos(lat) * Math.cos(lon);
-	    let y =  2 * Math.sin(lat) * Math.cos(lon);
-	    let z =  2 * Math.sin(lon) + 1*lat;  
+	    let lat = THREE.MathUtils.mapLinear(i, 0, cantidad,  -Math.PI/4, Math.PI);
+	    let lon = THREE.MathUtils.mapLinear(j, 0, cantidad, -Math.PI, Math.PI);
 	    
+	    
+	    let x = 1.5 * Math.cos(lat) * (1.5 + Math.sin(lon) * Math.cos(lat) - Math.sin(4*lon) * Math.sin(lat) / 2);
+            let y = 1.5 * Math.sin(lat) * (1.5 + Math.sin(lon) * Math.cos(lat) - Math.sin(4*lon) * Math.sin(lat) / 2) ;
+            let z = 1.5 * Math.sin(lat) * Math.sin(lon) + Math.cos(lat) * Math.sin(2*lon) / 2 ;
+	    
+
+	    /*
+	    let x =  1 * Math.cos(lat) * Math.cos(lon);
+	    let y =  1 * Math.sin(lat) * Math.cos(lon);
+	    let z =  1 * Math.sin(lon) + 1*lat;  
+	    */
 	    vertices.push(x, y, z);
 	   
 	}
@@ -271,11 +396,18 @@ function init(){
 
     const geometry2 = new THREE.PlaneGeometry( 5, 5, cantidad, cantidad);
 
-    meshFinal = new THREE.Mesh(geometry2, material );
-    meshFinal.scale.x = 16; 
-    meshFinal.scale.y = 16; 
-    meshFinal.scale.z = 16; 
-     
+    
+    meshFinal = new THREE.Mesh(geometry2, materialC2 );
+    meshFinal.scale.x = 64; 
+    meshFinal.scale.y = 64; 
+    meshFinal.scale.z = 64; 
+
+    meshFinal.position.x = -100;
+    meshFinal.position.z = -100; 
+    // meshFinal.position.y = -50; 
+    
+    scene.add(meshFinal); 
+    
     geometry2.attributes.position.needsUpdate = true;
     // geometry2.computeVertexNormals(); 
 
@@ -285,6 +417,59 @@ function init(){
 	geometry2.attributes.position.setZ(i, vertices[i*3+2]); 
     }
 
+    ///////////////////////////// segundo mesh
+    
+    let vertices2 = [];
+    
+    for(let i = 0; i < cantidad; i++){
+	for(let j = 0; j < cantidad; j++){
+
+	    /*
+	    let lat = THREE.MathUtils.mapLinear(i, 0, cantidad,  -Math.PI, Math.PI);
+	    let lon = THREE.MathUtils.mapLinear(j, 0, cantidad, -Math.PI, Math.PI);
+	    */
+
+	    let lat = THREE.MathUtils.mapLinear(i, 0, cantidad,  -Math.PI/4, Math.PI);
+	    let lon = THREE.MathUtils.mapLinear(j, 0, cantidad, -Math.PI, Math.PI);
+	    
+	    
+	    
+	    let x =  1 * Math.cos(lat) * Math.cos(lon);
+	    let y =  1 * Math.sin(lat) * Math.cos(lon);
+	    let z =  1 * Math.sin(lon) + 1*lat;  
+	   
+	    vertices2.push(x, y, z);
+	   
+	}
+    }
+
+    const geometry3 = new THREE.PlaneGeometry( 5, 5, cantidad, cantidad);
+
+    
+    meshFinal2 = new THREE.Mesh(geometry3, materialC2 );
+    meshFinal2.scale.x = 64; 
+    meshFinal2.scale.y = 64; 
+    meshFinal2.scale.z = 64;
+
+    meshFinal2.rotation.x = Math.PI/2; 
+
+    meshFinal2.position.x = -100;
+    meshFinal2.position.z = 100; 
+    // meshFinal.position.y = -50; 
+    
+    scene.add(meshFinal2); 
+    
+    geometry3.attributes.position.needsUpdate = true;
+    // geometry2.computeVertexNormals(); 
+
+    for(let i = 0; i < geometry2.attributes.position.count; i++){
+	geometry3.attributes.position.setX(i, vertices2[i*3]);
+	geometry3.attributes.position.setY(i, vertices2[i*3+1]); 
+	geometry3.attributes.position.setZ(i, vertices2[i*3+2]); 
+    }
+
+    ///////////////////// final segundo mesh 
+    
 */
 
     // console.log(vertices); 
@@ -304,54 +489,46 @@ function init(){
     renderScene.clearColor = new THREE.Color( 0, 0, 0 );
     renderScene.clearAlpha = 0;
     
-    const bloomPass = new UnrealBloomPass( new THREE.Vector2( container.innerWidth, container.innerHeight ), 1.5, 0.4, 0.85 );
-    bloomPass.threshold = 0.8;
+    const bloomPass = new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
+    bloomPass.threshold = 0.4;
     bloomPass.strength = 0.1; // parametrizable 
-    bloomPass.radius = 0.8;
-
-    let fxaaPass = new ShaderPass( FXAAShader );
-    const pixelRatio = renderer2.getPixelRatio();
-
-    fxaaPass.material.uniforms[ 'resolution' ].value.x = 1 / ( window.offsetWidth * pixelRatio );
-    fxaaPass.material.uniforms[ 'resolution' ].value.y = 1 / ( window.offsetHeight * pixelRatio );
+    bloomPass.radius = 0.1;
     
     composer = new EffectComposer( renderer2 );
     composer.addPass( renderScene );
-    composer.addPass( fxaaPass );
-
-    composer.addPass( bloomPass );
+    //composer.addPass( bloomPass );
+    glitchPass = new GlitchPass();
+    composer.addPass( glitchPass );
 
     controls = new OrbitControls( camera, renderer2.domElement );
-    controls.maxDistance = 300;
+    controls.maxDistance = 1000;
 
     osc2.on('/switchHydra', message => {
 
 	hydra.hush();
 	
-	switch(  message.args[0] ) {
+	switch(  0 ) {
 	case 0:
-	    osc(osci, 0.1, -0.5) // osci
-		.color(1, 0.9,1.2) 
-                .kaleid(kal) // kal
-		.diff(voronoi(voro, vorvel, 0) // voro, vorovel
-		      .color(0, 0, 0))
-                .rotate(ang, rotvel) // ang, rotvel 
-                .modulateScrollX(o0, () => (mod * 0.0003)) // mod (antes estaba solo modulate)  
-                .scale(scl, sclX, sclY) // scl, sclX, sclY
-		.saturate(sat) // sat
-                .out(o0)
+
+	   
+	    hydra.osc(20, 0.1, 0)
+	    // .color(0.85, 0.85, 0.85)
+		.kaleid(10)
+		.rotate(10, 0.1)
+		.modulate(hydra.o0, () => (1000 * 0.0003))
+		.scale(1.1)
+		.out(hydra.o0)
 	    break;
-	case 1:
-	    osc(osci, 0.1, -0.5) // osci
-		.color(1, 0.9,1.2) 
-                .kaleid(kal) // kal
-		.diff(voronoi(voro, vorvel, 0) // voro, vorovel
-		      .color(0, 0, 0))
-                .rotate(ang, rotvel) // ang, rotvel 
-                .modulate(o0, () => (mod * 0.0003)) // mod (antes estaba solo modulate)  
-                .scale(scl, sclX, sclY) // scl, sclX, sclY
-		.saturate(sat) // sat
-                .out(o0)
+	case 1: 
+	    voronoi(8,1)
+		.mult(osc(10,0.1,0.2))
+		.modulate(o0,0.5)
+		.add(o0,0.8)
+		.scrollY(-0.01)
+		.scale(0.99)
+		.modulate(voronoi(8,1),0.008)
+		.luma(()=>mX*0.0009) 
+		.out()
 
 	    break;
 	case 2:
@@ -578,10 +755,24 @@ function animate() {
 
     requestAnimationFrame( animate );
 
-    var time2 = Date.now() * 0.005;
-    var time = Date.now() * 0.0001; // por aquí podría estar un parámetro de velocidad 
+    var time2 = Date.now() * 0.001;
+    var time = Date.now() * 0.0001;
+
+
     let perlin = new ImprovedNoise();
 
+    plane.geometry.attributes.position.needsUpdate = true;
+    // geometry2.computeVertexNormals(); 
+    
+    for(let i = 0; i < plane.geometry.attributes.position.count; i++){
+	let d = perlin.noise(plane.geometry.attributes.position.getX(i)*0.01+time2,
+			     plane.geometry.attributes.position.getY(i)*0.01+time2,
+			     plane.geometry.attributes.position.getZ(i)*0.01+time2 ) * 0.5
+
+	plane.geometry.attributes.position.setZ(i, 60*(d+1));
+    }
+
+    
     for( var i = 0; i < total; i++){
 	
 	let d = perlin.noise(pX[i]*1+time,
@@ -592,10 +783,11 @@ function animate() {
 	cubos[i].position.y = (pY[i]*200)* (1+d);
 	cubos[i].position.z = (pZ[i]*200)* (1+d);
 
+	cubos[i].scale.x = 4* (d)*4;
+	cubos[i].scale.y = 4* (d)*4;
+	cubos[i].scale.z = 4* (d)*4;
 	
-	cubos[i].scale.x = 1* (d)*1;
-	cubos[i].scale.y = 1* (d)*1;
-	cubos[i].scale.z = 1* (d)*1;
+
 
 	
 	cubos[i].rotation.x = 1* (d)*4;
@@ -627,13 +819,11 @@ function animate() {
     }
 
     cuboGrande.geometry.attributes.position.needsUpdate = true;
-
     
-    camera.position.x = Math.sin( time2 * 0.125/4 ) * ( 75 + Math.sin( time2 * 0.125 )* 4) * 1; 
-    camera.position.y = Math.cos( time2 * 0.125/4 ) * 200; 
-    camera.position.z = Math.cos( time2 * 0.125/4 ) * - 200;
-    
-
+    camera.position.x = Math.sin( time2 * 0.125 ) * ( 65 + Math.sin( time2 * 0.125 )* 4) * 1; 
+    camera.position.y = Math.cos( time2 * 0.125 ) * 60; 
+    camera.position.z = Math.cos( time2 * 0.125 ) * - 65;
+   
     camera.lookAt(0, 0, 0);
    
     /*
@@ -646,6 +836,35 @@ function animate() {
     light2.position.z = Math.cos( time2 * 0.3/2 ) * -14;
 
     */
+ 
+    torus5.rotation.x += 0.011/4;
+    torus5.rotation.z -= 0.021/4; 
+    torus5.rotation.y += 0.031/4; 
+
+    torus4.rotation.x += 0.012/4;
+    torus4.rotation.z += 0.022/4; 
+    torus4.rotation.y += 0.032/4; 
+
+    torus1.rotation.x -= 0.013/4;
+    torus1.rotation.z += 0.023/4; 
+    torus1.rotation.y += 0.033/4; 
+
+    torus2.rotation.x -= 0.014/4;
+    torus2.rotation.z += 0.024/4; 
+    torus2.rotation.y += 0.034/4; 
+
+    torus3.rotation.x -= 0.015/4;
+    torus3.rotation.z += 0.015/4; 
+    torus3.rotation.y += 0.035/4; 
+
+    meshFinal.rotation.x -= 0.015/8;
+    meshFinal.rotation.z += 0.015/8; 
+    meshFinal.rotation.y += 0.035/8; 
+
+    meshFinal2.rotation.x -= 0.014/8;
+    meshFinal2.rotation.z += 0.014/8; 
+    meshFinal2.rotation.y += 0.034/8; 
+
     
     vit.needsUpdate = true; 
     // vit2.needsUpdate = true; 
@@ -655,18 +874,18 @@ function animate() {
     }
 
     
-    cuboGrande.rotation.x += 0.0001;
-    cuboGrande.rotation.y += 0.0002;
 
     // camera.rotation.x +- 0.01; 
    
-    renderer2.render( scene, camera );
+    // renderer2.render( scene, camera );
     composer.render();
 
     if (retroBool ){
 	vector.x = ( window.innerWidth * dpr / 2 ) - ( textureSize / 2 );
 	vector.y = ( window.innerHeight * dpr / 2 ) - ( textureSize / 2 );	
 	renderer2.copyFramebufferToTexture( vector, texture );
+	renderer2.clearDepth();
+
     }
 
 
