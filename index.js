@@ -1,3 +1,6 @@
+
+// se ve muy raro hydra como textura
+
 import * as Tone from 'tone';
 import * as THREE from 'three';
 import { OrbitControls } from './jsm/controls/OrbitControls.js';
@@ -17,10 +20,8 @@ osc2.open();
 
 document.body.style.cursor = 'none'; 
 
-let renderer2, scene, camera, composer, controls; 
-
+let renderer2, scene, camera, composer, controls, container; 
 let cube, ring, ring2, ring3;
-
 let switchHydra = 0, switchModel = 0; 
 
 /*
@@ -52,21 +53,28 @@ let bamboo = [];
 let cubos = [];
 
 let pX = [], pY = [], pZ = []; 
-let mX = 1000, mY = 10; 
 
 let total = 100;
+// let mX = 1000, mY = 10; 
+
+let osci=10, kal=5, voro=5, vorvel=0.5, ang=10, rotvel=0.1, mod=1000, scl = 0.49, sclX = 1.05, sclY = 0.95, sat = 1;  
+
+let total = 128;
+
 
 var hydra = new Hydra({
     canvas: document.getElementById("myCanvas"),
     detectAudio: false,
-    makeGlobal: false
-}).synth
+    //makeGlobal: false
+}) // antes tenía .synth aqui 
 
+/*
 var hydra2 = new Hydra({
     canvas: document.getElementById("myCanvas2"),
     detectAudio: false,
     makeGlobal: false
 }).synth
+*/
 
 
 /*
@@ -90,15 +98,30 @@ hydra.src(hydra.o0).modulateHue(hydra.src(hydra.o0).scale(1.5),[1,2].smooth()).l
   .kaleid([2,3,4,3,2].smooth())
   .rotate(0,2)
 ).out(hydra.o0)
+osc(10).out(o0);
 
+/*
+hydra.shape(20,0.5,1.5)
+    .scale(0.2,0.4)
+    .color(0.3,0,[0.9,2,9].smooth(1))
+    .repeat(9,5)
+    .modulateScale(hydra.osc(3,0.5),-0.6)
+    .scrollX(-0.2,-0.3)
+    .modulate(hydra.src(hydra.o0),0.9)
+    .add(hydra.o0,0.5)
+    .scale(0.8)
+    .out()
+*/
+    
 const elCanvas = document.getElementById( 'myCanvas');
 elCanvas.style.display = 'none';     
 let vit = new THREE.CanvasTexture(elCanvas);
 
+/*
 const elCanvas2 = document.getElementById( 'myCanvas2');
 elCanvas2.style.display = 'none';     
 let vit2 = new THREE.CanvasTexture(elCanvas2);
-
+*/
 
 Tone.start().then(init()); 
 
@@ -112,9 +135,14 @@ let torus1;
 let torus2;
 let torus3, torus4, torus5; 
 let meshFinal2; 
+let rocas;
+let velocidadCubos = 1; 
+let velocidadEnt = 1; 
 
 function init(){
 
+    container = document.getElementById( 'container' );
+    
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 2000 );
 
@@ -136,9 +164,10 @@ function init(){
     
     //const geometry = new THREE.BoxGeometry(3, 3, 3);
     const geometry = new THREE.SphereGeometry(5, 4, 3 );
+
     // Buffergeometry 
     // console.log(geometry.attributes.position); 
-    const material = new THREE.MeshBasicMaterial( { color: 0xffffff, map:texture,  side: THREE.DoubleSide } );
+    const material = new THREE.MeshBasicMaterial( { color: 0xffffff, map:texture } );
 
     const material222 = new THREE.MeshBasicMaterial( { color: 0xffffff, map:textureV,  side: THREE.DoubleSide } );
 
@@ -243,6 +272,10 @@ function init(){
     torus5.position.x = 50;
     torus5.position.z = 50; 
     scene.add( torus5 );
+    // const geometryP = new THREE.PlaneGeometry( 16*2, 9*2 );
+    // const materialP = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide, map: vit2 } );
+    // const plane = new THREE.Mesh( geometryP, materialP );
+    // scene.add( plane );
 
     
     materialC2 = new THREE.MeshBasicMaterial( {
@@ -256,11 +289,13 @@ function init(){
 	// envMap: alpha < 0.5 ? reflectionCube : null
     } );
 
+    
 	
     const sphGeom = new THREE.SphereGeometry( 20, 64, 64 );
     sph = new THREE.Mesh(sphGeom, materialC2); 
     
     audioSphere = new THREE.SphereGeometry( 1500, 64, 64 );
+
     // audioSphere = new THREE.CylinderGeometry( 500, 500, 500, 6 );
     //audioSphere = new THREE.BoxGeometry( 500, 500, 500, 32, 32, 32 )
     audioSphere.usage = THREE.DynamicDrawUsage;
@@ -322,6 +357,7 @@ function init(){
 	);
     */
 
+    /*
     let vertices = [];
     let normales = []; 
     const cantidad = 1000;
@@ -333,6 +369,11 @@ function init(){
 	    let lat = THREE.MathUtils.mapLinear(i, 0, cantidad,  -Math.PI, Math.PI);
 	    let lon = THREE.MathUtils.mapLinear(j, 0, cantidad, -Math.PI, Math.PI);
 	    */
+	    
+	    //let x = 1.5 * Math.cos(lat) * (1.5 + Math.sin(lon) * Math.cos(lat) - Math.sin(2*lon) * Math.sin(lat) / 2);
+            //let y = 1.5 * Math.sin(lat) * (1.5 + Math.sin(lon) * Math.cos(lat) - Math.sin(2*lon) * Math.sin(lat) / 2) ;
+            //let z = 1.5 * Math.sin(lat) * Math.sin(lon) + Math.cos(lat) * Math.sin(2*lon) / 2 ;
+	    
 
 	    let lat = THREE.MathUtils.mapLinear(i, 0, cantidad,  -Math.PI/4, Math.PI);
 	    let lon = THREE.MathUtils.mapLinear(j, 0, cantidad, -Math.PI, Math.PI);
@@ -429,18 +470,24 @@ function init(){
 
     ///////////////////// final segundo mesh 
     
+*/
+
     // console.log(vertices); 
     // scene.add(meshFinal); 
     
-    // renderer2 = new THREE.WebGLRenderer({ antialias: true });
     renderer2 = new THREE.WebGLRenderer();
+    // renderer2 = new THREE.WebGLRenderer();
+    renderer2.setSize( container.offsetWidth, container.offsetHeight );
+    container.appendChild( renderer2.domElement );
 
-    renderer2.setSize( window.innerWidth, window.innerHeight );
-    document.body.appendChild( renderer2.domElement ); 
+    //renderer2.setSize( window.innerWidth, window.innerHeight );
+    // document.body.appendChild( renderer2.domElement ); 
 
-     window.addEventListener( 'resize', onWindowResize);
+    window.addEventListener( 'resize', onWindowResize);
     
     const renderScene = new RenderPass( scene, camera );
+    renderScene.clearColor = new THREE.Color( 0, 0, 0 );
+    renderScene.clearAlpha = 0;
     
     const bloomPass = new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
     bloomPass.threshold = 0.4;
@@ -462,6 +509,7 @@ function init(){
 	
 	switch(  0 ) {
 	case 0:
+
 	   
 	    hydra.osc(20, 0.1, 0)
 	    // .color(0.85, 0.85, 0.85)
@@ -481,6 +529,7 @@ function init(){
 		.modulate(voronoi(8,1),0.008)
 		.luma(()=>mX*0.0009) 
 		.out()
+
 	    break;
 	case 2:
 	    osc(5, 0.9, 0.00)
@@ -593,6 +642,14 @@ function init(){
 	}
     });
 
+    osc2.on('/iniciar', message => {
+	// bloomPass.strength = message.args[0];
+	if(message.args[0]){
+	    rocas.start();
+	}
+    });
+
+    /*
     osc2.on('/meshFinal', message => {
 	boolMesh = message.args[0];
 	// console.log( retroBool );
@@ -602,6 +659,7 @@ function init(){
 	    rmMesh(); 
 	}
     });
+    */
     
     osc2.on('/camX', message => {
 	camera.position.x = message.args[0];
@@ -622,9 +680,75 @@ function init(){
      osc2.on('/mY', message => {
 	mY = message.args[0];
     })
-    
-    animate();
 
+    osc2.on('/osci', message => {
+	osci = message.args[0];
+    })
+
+    osc2.on('/kal', message => {
+	kal = message.args[0];
+    })
+
+    osc2.on('/voro', message => {
+	voro = message.args[0];
+    })
+
+    osc2.on('/vorvel', message => {
+	vorvel = message.args[0];
+    })
+
+     osc2.on('/ang', message => {
+	ang = message.args[0];
+    })
+
+    osc2.on('/rotvel', message => {
+	rotvel = message.args[0];
+    })
+
+    osc2.on('/mod', message => {
+	mod = message.args[0];
+    })
+
+     osc2.on('/scl', message => {
+	scl = message.args[0];
+     })
+
+    osc2.on('/sclX', message => {
+	sclX = message.args[0];
+    })
+
+    osc2.on('/sclY', message => {
+	sclY = message.args[0];
+    })
+
+    osc2.on('/sat', message => {
+	sat = message.args[0];
+    })
+
+    osc2.on('/bamboo', message => {
+	if(message.args[0]){
+	    loc = 0; 
+	    for(let k=0; k<18;k++){
+		for(let i=1;i<6;i++){
+		    scene.add(bamboo[loc]);
+		    loc++; 
+		}
+	    }
+	} else {
+	    loc = 0; 
+	    for(let k=0; k<18;k++){
+		for(let i=1;i<6;i++){
+		    scene.remove(bamboo[loc]);
+		    loc++; 
+		}
+	    }
+
+	}
+    })
+
+
+    score();
+    animate();
     
 }
 function animate() {
@@ -633,6 +757,8 @@ function animate() {
 
     var time2 = Date.now() * 0.001;
     var time = Date.now() * 0.0001;
+
+
     let perlin = new ImprovedNoise();
 
     plane.geometry.attributes.position.needsUpdate = true;
@@ -649,18 +775,21 @@ function animate() {
     
     for( var i = 0; i < total; i++){
 	
-	let d = perlin.noise(pX[i]*4+time,
-			     pY[i]*4+time,
-			     pZ[i]*4+time ) * 1
+	let d = perlin.noise(pX[i]*1+time,
+			     pY[i]*1+time,
+			     pZ[i]*1+time ) * velocidadCubos
 
 	cubos[i].position.x = (pX[i]*200)* (1+d);
-	cubos[i].position.y = (pY[i] *200)* (1+d);
-	cubos[i].position.z = (pZ[i]* 200)* (1+d);
+	cubos[i].position.y = (pY[i]*200)* (1+d);
+	cubos[i].position.z = (pZ[i]*200)* (1+d);
 
 	cubos[i].scale.x = 4* (d)*4;
 	cubos[i].scale.y = 4* (d)*4;
 	cubos[i].scale.z = 4* (d)*4;
+	
 
+
+	
 	cubos[i].rotation.x = 1* (d)*4;
 	cubos[i].rotation.y = 1* (d)*4;
 	cubos[i].rotation.z = 1* (d)*4;
@@ -670,9 +799,9 @@ function animate() {
 
     for ( var i = 0; i < cuboGrande.geometry.attributes.position.count; i++){
 
-	let d = perlin.noise( cuboGrande.geometry.attributes.position.getX(i)*0.001+time,
-			      cuboGrande.geometry.attributes.position.getY(i)*0.001+time,
-			      cuboGrande.geometry.attributes.position.getZ(i)*0.001+time ) * 0.5
+	let d = perlin.noise( cuboGrande.geometry.attributes.position.getX(i)*0.0001+time,
+			      cuboGrande.geometry.attributes.position.getY(i)*0.0001+time,
+			      cuboGrande.geometry.attributes.position.getZ(i)*0.0001+time ) * 1
 
 	cuboGrande.geometry.attributes.position.setX(
 	    i, (cuboGrandeCopy.geometry.attributes.position.getX(i)) * (1+d)
@@ -738,12 +867,14 @@ function animate() {
 
     
     vit.needsUpdate = true; 
-    vit2.needsUpdate = true; 
+    // vit2.needsUpdate = true; 
 
     for(let i = 0; i < total; i++){
 	cubos[i].rotation.y += 0.005; 
     }
+
     
+
     // camera.rotation.x +- 0.01; 
    
     // renderer2.render( scene, camera );
@@ -762,7 +893,6 @@ function animate() {
 
 function onWindowResize() {
 
-    
     //windowHalfX = window.innerWidth / 2;
     //windowHalfY = window.innerHeight / 2;
     
@@ -788,13 +918,15 @@ function retroadd(){
     scene.add( cuboGrande ); 
 }
 
-function addMesh(){
-    scene.add(meshFinal); 
-}
+/*
+  function addMesh(){
+  scene.add(meshFinal); 
+  }
 
-function rmMesh(){
-    scene.remove(meshFinal); 
-}
+  function rmMesh(){
+  scene.remove(meshFinal); 
+  }
+*/
 
 function audio(){
     
@@ -802,5 +934,63 @@ function audio(){
     an.smoothing = 0.99
     const mic = new Tone.UserMedia().connect( an );
     mic.open();
+
+}
+
+// Diseño del score: sería algo así como distribuir la totalidad de la rola en tres escenas que agregan o quitan elementos 
+
+function score(){
+
+    let metaContador = 0; 
+    
+    let contador = 0;
+    let sw = true;
+    let conti = true; 
+    
+    rocas = new Tone.Loop((time) => {
+	
+	if(sw == true){
+	    scene.add(cubos[contador]); 
+	    contador++;
+	} else {
+	    scene.remove(cubos[contador]); 
+	    contador--;
+	}
+
+	if(contador == 256){
+	    sw = false; 
+	}
+
+	if(contador == -1){
+	    // rocas.stop(); // aquí podría activarse el siguiente momento
+	    console.log("final");
+	    sw = true;
+	    metaContador++;
+	    // if(metaContador == 2) {
+	    rocas.stop();
+
+	    /*
+	    osc2.on('open', () => {
+		const message = new OSC.Message('/test', 12.221, 'hello')
+		osc2.send(message);
+		})
+	    */
+
+	    send = (address = "", args) => {
+		var message = new OSC.Message(address, args)
+		osc2.send(message);
+	    }
+	    
+	    // execute this line to send an osc message
+	    send('/regreso', "////Terminó la vuelta "+metaContador+"////");
+	    
+	    // }
+	}
+
+	// console.log(contador); 
+	
+    }, "0.05"); // 50 segundos x ( 7 - 8 ) = ( 5.8 - 6.6 )  min 
+
+    Tone.Transport.start();
     
 }
